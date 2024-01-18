@@ -4,12 +4,13 @@ system = platform.system()
 if system == "Windows":
     idir = "D:\\wgmn\\rsort\\ims"
 elif system == "Linux":
-    idir = "//home//ek//Desktop//wgmn//rsort//testes"
+    idir = "//home//ek//Desktop//wgmn//rsort//ims"
 
 name = "0.png"
 path = os.path.join(idir, name)
 
 if __name__ == "__main__":
+    print(f"{yellow}loading image at {path}{endc}\n")
     im = cv2.imread(os.path.join(path, name))
     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     cv2.imshow('im', im)
