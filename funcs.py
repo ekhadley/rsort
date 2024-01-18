@@ -1,4 +1,5 @@
-import cv2, numpy as np
+import cv2, time
+import numpy as np
 
 
 def imscale(img, s):
