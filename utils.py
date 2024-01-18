@@ -6,6 +6,9 @@ def imscale(img, s):
     assert not 0 in np.shape(img), "empty src image"
     return cv2.resize(img, (round(len(img[0])*s), round(len(img)*s)), interpolation=cv2.INTER_NEAREST)
 
+def imshow(name, img, s):
+    cv2.imshow(name, imscale(img, s))
+
 purple = '\033[95m'
 blue = '\033[94m'
 cyan = '\033[96m'
