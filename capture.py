@@ -1,6 +1,5 @@
-import time, cv2, numpy as np
+from utils import *
 from picamera2 import Picamera2
-from funcs import *
 
 pc2 = Picamera2()
 stillConf = pc2.create_still_configuration()
