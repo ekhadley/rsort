@@ -1,5 +1,7 @@
 import cv2, time, os, platform, math
 import numpy as np
+import colorgram as cg
+from PIL import Image
 from tqdm import trange
 
 
