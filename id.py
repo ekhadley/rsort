@@ -6,12 +6,6 @@ if system == "Windows":
 elif system == "Linux":
     idir = "//home//ek//Desktop//wgmn//rsort//ims"
 
-name = "0.png"
-path = os.path.join(idir, name)
-
-def endpoints(im: np.ndarray):
-    return (.48, .48), (.305, .76)
-
 def crop_to_ends(im: np.ndarray, points: tuple[float]):
     end1, end2 = points
     x1, y1, x2, y2 = *end1, *end2
@@ -47,8 +41,8 @@ def gradient(im: np.ndarray, retim=True):
     h, w, d = im.shape
     my = h//2
     strp = im[my-30:my+30,:].astype(np.float32)
-    strp = row_cluster(strp)
-    #strp = col_cluster(strp)
+    strp = row_cluster(strp, K=1)
+    #strp = col_cluster(strp, K=15)
     #strp -= np.array([116.06326531, 90.58605442, 36.85034014])
     #strp -= np.mean(strp, axis=(0,1))
     
@@ -59,18 +53,16 @@ def gradient(im: np.ndarray, retim=True):
     relmags = sums/np.sum(strp, axis=(0,2)).reshape(-1, 1)
     return strp, relmags
 
-def row_cluster(strp):
+def row_cluster(strp, K=1):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-    K = 1
     ret, label, center = cv2.kmeans(np.float32(strp), K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     center = np.uint8(center)
     res = center[label.flatten()]
     return res.reshape((strp.shape))
 
-def col_cluster(strp_: np.ndarray):
+def col_cluster(strp_: np.ndarray, K=15):
     strp = strp_.swapaxes(0, 1)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-    K = 15
     ret, label, center = cv2.kmeans(np.float32(strp), K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     center = np.uint8(center)
     res = center[label.flatten()]
@@ -82,10 +74,18 @@ def col_cluster(strp_: np.ndarray):
     print(bold, pink, res.shape, endc)
     return res.reshape(strp.shape).swapaxes(0, 1)
 
-import matplotlib.pyplot as plt
+
+def endpoints(im: np.ndarray):
+    #return (.48, .48), (.305, .76) # 0
+    return (.41, .4), (.25, .665) # 1
 
 fig, ax = plt.subplots()
 ax.set_prop_cycle(color=["blue", "green", "red"])
+qwe, asd = plt.subplots()
+asd.set_prop_cycle(color=["blue", "green", "red"])
+
+name = "1.png"
+path = os.path.join(idir, name)
 if __name__ == "__main__":
     im = cv2.imread(path)
     #im = cv2.GaussianBlur(im, (13,13), 0)
@@ -96,18 +96,22 @@ if __name__ == "__main__":
 
     ends = endpoints(im)
     marked = mark_ends(im, ends)
-    rotated = isolate(im, ends, crop=True)
-    strp, colors = gradient(rotated)
-    print(strp.dtype)
+    rotated = isolate(im, ends)
 
-    extr = cg.extract(Image.fromarray(np.flip(strp, axis=-1)), 6)
-    for c in extr:
-        print(bold, red, c, endc)
+    strp, colors = gradient(rotated)
+    print(colors.shape)
+    #extr = cg.extract(Image.fromarray(np.flip(strp, axis=-1)), 6)
+    #for c in extr:
+    #    print(bold, red, c, endc)
 
     ax.plot(colors)
+
+    dcolors = np.diff(colors, axis=0)
+    print(bold, pink, dcolors.shape, endc)
+    asd.plot(dcolors)
     
-    imshow('im', marked, .25)
-    imshow('rotated', rotated, .25)
-    imshow('sliced', strp)
+    #imshow('im', marked, .25)
+    #imshow('rotated', rotated, .25)
+    #imshow('sliced', strp)
     plt.show()
     cv2.waitKey(0)

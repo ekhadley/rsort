@@ -3,7 +3,8 @@ import numpy as np
 import colorgram as cg
 from PIL import Image
 from tqdm import trange
-
+import matplotlib
+import matplotlib.pyplot as plt
 
 def imscale(img, s):
     assert not 0 in img.shape, "empty src image"
