@@ -1,6 +1,5 @@
 from utils import *
 
-
 system = platform.system()
 if system == "Windows":
     idir = "D:\\wgmn\\rsort\\ims"
