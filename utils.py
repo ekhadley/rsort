@@ -4,6 +4,20 @@ import colorgram as cg
 from PIL import Image
 from tqdm import trange
 
+purple = '\033[95m'
+blue = '\033[94m'
+cyan = '\033[96m'
+lime = '\033[92m'
+yellow = '\033[93m'
+red = "\033[38;5;196m"
+pink = "\033[38;5;206m"
+orange = "\033[38;5;202m"
+green = "\033[38;5;34m"
+gray = "\033[38;5;8m"
+
+bold = '\033[1m'
+underline = '\033[4m'
+endc = '\033[0m'
 
 def imscale(img, s):
     assert not 0 in img.shape, "empty src image"
@@ -28,18 +42,3 @@ def rotate_image(image, degrees, center=None):
     mat = cv2.getRotationMatrix2D(center, angle=degrees, scale=1.0)
     result = cv2.warpAffine(image, mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
-
-purple = '\033[95m'
-blue = '\033[94m'
-cyan = '\033[96m'
-lime = '\033[92m'
-yellow = '\033[93m'
-red = "\033[38;5;196m"
-pink = "\033[38;5;206m"
-orange = "\033[38;5;202m"
-green = "\033[38;5;34m"
-gray = "\033[38;5;8m"
-
-bold = '\033[1m'
-underline = '\033[4m'
-endc = '\033[0m'
