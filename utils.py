@@ -3,6 +3,7 @@ import numpy as np
 import colorgram as cg
 from PIL import Image
 from tqdm import trange
+<<<<<<< HEAD
 
 purple = '\033[95m'
 blue = '\033[94m'
@@ -18,6 +19,10 @@ gray = "\033[38;5;8m"
 bold = '\033[1m'
 underline = '\033[4m'
 endc = '\033[0m'
+=======
+import matplotlib
+import matplotlib.pyplot as plt
+>>>>>>> ff16145895a0e7860d99bf74fb5a1563bbaf3873
 
 def imscale(img, s):
     assert not 0 in img.shape, "empty src image"
