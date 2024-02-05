@@ -110,8 +110,8 @@ if __name__ == "__main__":
     print(bold, pink, dcolors.shape, endc)
     asd.plot(dcolors)
     
+    imshow('sliced', strp)
     #imshow('im', marked, .25)
     #imshow('rotated', rotated, .25)
-    #imshow('sliced', strp)
     plt.show()
     cv2.waitKey(0)
