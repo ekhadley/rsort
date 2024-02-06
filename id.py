@@ -4,13 +4,12 @@ system = platform.system()
 if system == "Windows":
     idir = "D:\\wgmn\\rsort\\ims"
 elif system == "Linux":
-    idir = "//home//ek//Desktop//wgmn//rsort//ims"
+    idir = "/home/ek/Desktop/wgmn/rsort/ims"
 
-name = "0.png"
-path = os.path.join(idir, name)
 
 def endpoints(im: np.ndarray):
-    return (.48, .48), (.305, .76)
+    return (.48, .48), (.31, .75) # im1
+    #return (.41, .4), (.25, .67) # im2
 
 def crop_to_ends(im: np.ndarray, points: tuple[float]):
     end1, end2 = points
@@ -37,40 +36,44 @@ def isolate(im: np.ndarray, ends: tuple[float], crop=True):
     a = abs(a)
     #if a < 0: a += 360
     out = rotate_image(im, -a, center=(px1, py1))
-    if crop:
-        dist = int(np.linalg.norm((px1-px2, py1-py2)))
-        out = out[py1-200:py1+200, px1+50:px1+dist-50]
-        #out = out[py1-20:py1+20, px1:px1+dist] # the slice used for color gradient examination
-    return out
+    dist = int(np.linalg.norm((px1-px2, py1-py2)))
+    out = out[py1-30:py1+30, px1+50:px1+dist-50]
+    print(bold, pink, out.shape, endc)
+    imshow("out", out)
+    cv2.waitKey(0)
+    return out # the slice used for color gradient examination
 
-def gradient(im: np.ndarray, retim=True):
-    h, w, d = im.shape
-    my = h//2
-    strp = im[my-30:my+30,:].astype(np.float32)
-    strp = row_cluster(strp)
-    #strp = col_cluster(strp)
-    #strp -= np.array([116.06326531, 90.58605442, 36.85034014])
-    #strp -= np.mean(strp, axis=(0,1))
+def gradient(strp: np.ndarray, retim=True):
+    #strp = cv2.cvtColor(strp, cv2.COLOR_BGR2Lab)
+    #strp = row_cluster(strp, K=1)
+    #strp = col_cluster(strp, K=20) # cluster the rows 
+    #strp -= np.array([116.06326531, 90.58605442, 36.85034014]) # subtract the bluey base resistor color
     
-    avgs = np.mean(strp, axis=(0,)) # average along columns of rgb values
-    sums = np.sum(strp, axis=(0,)) # sum along columns of rgb values
-    mag = np.mean(strp, axis=(0,2)) # pixel 'magnitude' averaged vertically and horizontally
-    #relmags = avgs/mag.reshape(-1, 1)
-    relmags = sums/np.sum(strp, axis=(0,2)).reshape(-1, 1)
-    return strp, relmags
+    avgs = np.mean(strp, axis=(0,)) # average color along columns of rgb values
+    sums = np.sum(strp, axis=(0,)) # sum of rgbs along columns
+    mag = np.mean(strp, axis=(0,2)) # average color value (average of averages of rgb) along columns
+    
+    relmags = sums/np.sum(strp, axis=(0,2)).reshape(-1, 1) # plots the relative magnitude of each color compared to total magnitude
+    
+    #Bavg = np.mean(strp[:,0,:])
+    #Gavg = np.mean(strp[:,1,:])
+    #Ravg = np.mean(strp[:,2,:])
+    #prelmags = np.mean(strp, axis=(0))
+    #prelmags[:,0] /= Bavg
+    #prelmags[:,1] /= Gavg
+    #prelmags[:,2] /= Ravg
+    return strp, avgs
 
-def row_cluster(strp):
+def row_cluster(strp, K=1):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-    K = 1
     ret, label, center = cv2.kmeans(np.float32(strp), K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     center = np.uint8(center)
     res = center[label.flatten()]
-    return res.reshape((strp.shape))
+    return res.reshape((strp.shape)).astype(strp.dtype)
 
-def col_cluster(strp_: np.ndarray):
+def col_cluster(strp_: np.ndarray, K=15):
     strp = strp_.swapaxes(0, 1)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-    K = 15
     ret, label, center = cv2.kmeans(np.float32(strp), K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     center = np.uint8(center)
     res = center[label.flatten()]
@@ -82,32 +85,30 @@ def col_cluster(strp_: np.ndarray):
     print(bold, pink, res.shape, endc)
     return res.reshape(strp.shape).swapaxes(0, 1)
 
-import matplotlib.pyplot as plt
+name = "0.png"
+path = os.path.join(idir, name)
 
 fig, ax = plt.subplots()
 ax.set_prop_cycle(color=["blue", "green", "red"])
 if __name__ == "__main__":
     im = cv2.imread(path)
     #im = cv2.GaussianBlur(im, (13,13), 0)
-    im = cv2.bilateralFilter(im, 15, 75, 75) 
+    im = cv2.bilateralFilter(im, 45, 75, 75) 
     
     print(f"{yellow}loaded image at {path}{endc}")
     print(f"{green}image has dimensions:{im.shape}{endc}")
 
     ends = endpoints(im)
     marked = mark_ends(im, ends)
-    rotated = isolate(im, ends, crop=True)
-    strp, colors = gradient(rotated)
-    print(strp.dtype)
+    strp = isolate(im, ends, crop=True)
+    colors = gradient(strp)
 
-    extr = cg.extract(Image.fromarray(np.flip(strp, axis=-1)), 6)
-    for c in extr:
-        print(bold, red, c, endc)
+    #extr = cg.extract(Image.fromarray(np.flip(strp, axis=-1)), 6) # color picking for groups
 
     ax.plot(colors)
     
     imshow('im', marked, .25)
-    #imshow('rotated', rotated, .25)
-    #imshow('sliced', strp)
+    imshow('rotated', rotated, .25)
+    imshow('sliced', strp)
     plt.show()
     cv2.waitKey(0)
