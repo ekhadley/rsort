@@ -8,8 +8,9 @@ elif system == "Linux":
 
 
 def endpoints(im: np.ndarray):
-    return (.48, .48), (.31, .75) # im1
-    #return (.41, .4), (.25, .67) # im2
+    #return (.48, .48), (.31, .75) # im0
+    #return (.41, .4), (.25, .67) # im1
+    return (.34, 0.985), (.15, .758) # im2
 
 def crop_to_ends(im: np.ndarray, points: tuple[float]):
     end1, end2 = points
@@ -37,19 +38,21 @@ def isolate(im: np.ndarray, ends: tuple[float], crop=True):
     #if a < 0: a += 360
     out = rotate_image(im, -a, center=(px1, py1))
     dist = int(np.linalg.norm((px1-px2, py1-py2)))
-    out = out[py1-30:py1+30, px1+50:px1+dist-50]
+    out = out[py1-30:py1+30, px1+50:px1+dist-50].astype(np.float32)
     return out # the slice used for color gradient examination
 
-def gradient(strp_: np.ndarray, retim=True):
+def gradient(strp_: np.ndarray):
     strp = strp_.copy()
     #strp = cv2.cvtColor(strp, cv2.COLOR_BGR2HV)
     strp = row_cluster(strp, K=1)
     #strp = col_cluster(strp, K=25) # cluster the rows 
     #strp -= np.array([116.06326531, 90.58605442, 36.85034014]) # subtract the bluey base resistor color
+    #strp -= np.mean(strp, axis=(0,1))
     
     avgs = np.mean(strp, axis=(0,)) # average color along columns of rgb values
     sums = np.sum(strp, axis=(0,)) # sum of rgbs along columns
     mag = np.mean(strp, axis=(0,2)) # average color value (average of averages of rgb) along columns
+    ints = np.mean(np.sqrt(np.sum(np.square(strp), axis=2)), axis=(0)) 
     
     relmags = sums/np.sum(strp, axis=(0,2)).reshape(-1, 1) # plots the relative magnitude of each color compared to total magnitude
     
@@ -60,7 +63,7 @@ def gradient(strp_: np.ndarray, retim=True):
     #prelmags[:,0] /= Bavg
     #prelmags[:,1] /= Gavg
     #prelmags[:,2] /= Ravg
-    return strp, avgs
+    return strp, ints
 
 def row_cluster(strp, K=1):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
@@ -77,7 +80,7 @@ def col_cluster(strp_: np.ndarray, K=15):
     res = center[label.flatten()]
     return res.reshape(strp.shape).swapaxes(0, 1)
 
-name = "0.png"
+name = "2.png"
 path = os.path.join(idir, name)
 
 fig, ax = plt.subplots()
@@ -85,7 +88,7 @@ ax.set_prop_cycle(color=["blue", "green", "red"])
 if __name__ == "__main__":
     im = cv2.imread(path)
     #im = cv2.GaussianBlur(im, (13,13), 0)
-    im = cv2.bilateralFilter(im, 45, 75, 75) 
+    im = cv2.bilateralFilter(im, 25, 75, 75) 
     
     print(f"{yellow}loaded image at {path}{endc}")
     print(f"{green}image has dimensions:{im.shape}{endc}")
