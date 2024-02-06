@@ -38,15 +38,13 @@ def isolate(im: np.ndarray, ends: tuple[float], crop=True):
     out = rotate_image(im, -a, center=(px1, py1))
     dist = int(np.linalg.norm((px1-px2, py1-py2)))
     out = out[py1-30:py1+30, px1+50:px1+dist-50]
-    print(bold, pink, out.shape, endc)
-    imshow("out", out)
-    cv2.waitKey(0)
     return out # the slice used for color gradient examination
 
-def gradient(strp: np.ndarray, retim=True):
-    #strp = cv2.cvtColor(strp, cv2.COLOR_BGR2Lab)
-    #strp = row_cluster(strp, K=1)
-    #strp = col_cluster(strp, K=20) # cluster the rows 
+def gradient(strp_: np.ndarray, retim=True):
+    strp = strp_.copy()
+    #strp = cv2.cvtColor(strp, cv2.COLOR_BGR2HV)
+    strp = row_cluster(strp, K=1)
+    #strp = col_cluster(strp, K=25) # cluster the rows 
     #strp -= np.array([116.06326531, 90.58605442, 36.85034014]) # subtract the bluey base resistor color
     
     avgs = np.mean(strp, axis=(0,)) # average color along columns of rgb values
@@ -77,12 +75,6 @@ def col_cluster(strp_: np.ndarray, K=15):
     ret, label, center = cv2.kmeans(np.float32(strp), K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     center = np.uint8(center)
     res = center[label.flatten()]
-   
-    print(f"{red+bold}strp has shape {strp.shape}{endc}")
-    print(bold, yellow, label.shape, endc)
-    print(bold, gray, center, endc)
-    print(bold, gray, center.shape, endc)
-    print(bold, pink, res.shape, endc)
     return res.reshape(strp.shape).swapaxes(0, 1)
 
 name = "0.png"
@@ -100,15 +92,15 @@ if __name__ == "__main__":
 
     ends = endpoints(im)
     marked = mark_ends(im, ends)
-    strp = isolate(im, ends, crop=True)
-    colors = gradient(strp)
+    cropped = isolate(im, ends, crop=True)
+    strp, colors = gradient(cropped)
 
     #extr = cg.extract(Image.fromarray(np.flip(strp, axis=-1)), 6) # color picking for groups
 
     ax.plot(colors)
     
     imshow('im', marked, .25)
-    imshow('rotated', rotated, .25)
-    imshow('sliced', strp)
+    imshow('cropped', cropped)
+    imshow('processed', strp)
     plt.show()
     cv2.waitKey(0)
