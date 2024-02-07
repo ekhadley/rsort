@@ -52,9 +52,9 @@ def gradient(strp_: np.ndarray):
     avgs = np.mean(strp, axis=(0,)) # average color along columns of rgb values
     sums = np.sum(strp, axis=(0,)) # sum of rgbs along columns
     mag = np.mean(strp, axis=(0,2)) # average color value (average of averages of rgb) along columns
-    ints = np.mean(np.sqrt(np.sum(np.square(strp), axis=2)), axis=(0)) 
+    ints = np.mean(np.sqrt(np.sum(np.square(strp), axis=2)), axis=(0)) # average 'intensities' of each column ( intensity = sqrt(R**2 + G**2 + B**2))
     
-    relmags = sums/np.sum(strp, axis=(0,2)).reshape(-1, 1) # plots the relative magnitude of each color compared to total magnitude
+    relmags = avgs/ints.reshape(-1, 1) # plots the relative magnitude of each color compared to total magnitude
     
     #Bavg = np.mean(strp[:,0,:])
     #Gavg = np.mean(strp[:,1,:])
