@@ -5,17 +5,35 @@ from PIL import Image
 from tqdm import trange
 import matplotlib
 import matplotlib.pyplot as plt
+import scipy
+
+def visualize_bands(colors, scale=5.0):
+    s = int(100*scale)
+    out = np.zeros((s, s*len(colors), 3), dtype=np.uint8)
+    for i, color in enumerate(colors):
+        col = tuple([int(c) for c in color])
+        out = cv2.rectangle(out, (s*i, 0), (s*(i+1), s), color=col, thickness=-1)
+    return out
+
+def load_test_im(name):
+    system = platform.system()
+    if system == "Windows": idir = "D:\\wgmn\\rsort\\ims"
+    elif system == "Linux": idir = "/home/ek/Desktop/wgmn/rsort/ims"
+    else: raise FileNotFoundError(f"{bold+red}unknown system: {system}. failed to load image{endc}")
+    path = os.path.join(idir, name)
+    return cv2.imread(path)
 
 def imscale(img, s):
     assert not 0 in img.shape, "empty src image"
     return cv2.resize(img, (round(len(img[0])*s), round(len(img)*s)), interpolation=cv2.INTER_NEAREST)
 
-def imshow(name, img, s=1.0):
+def imshow(name, img, s=1.0, wait=False):
     cv2.imshow(name, imscale(img, s))
+    if wait: cv2.waitKey(0)
 
 def relpix(img, *args):
-    h, w, d = img.shape
-    if len(args) == 1 and isinstance(args[0], tuple(float)):
+    h, w, _ = img.shape
+    if len(args) == 1 and isinstance(args[0], tuple):
         x, y = args[0]
     elif len(args) == 2 and isinstance(args[0], float) and isinstance(args[1], float):
         x, y = args
@@ -24,7 +42,7 @@ def relpix(img, *args):
 
 def rotate_image(image, degrees, center=None):
     if center is None:
-        h, w, d = image.shape
+        h, w, _ = image.shape
         center = (w//2, h//2)
     mat = cv2.getRotationMatrix2D(center, angle=degrees, scale=1.0)
     result = cv2.warpAffine(image, mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
