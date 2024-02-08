@@ -37,11 +37,8 @@ def isolate(im: np.ndarray, ends: tuple):
 
 def gradient(strp_: np.ndarray):
     strp = strp_.copy().astype(np.float32)
-    #strp = cv2.cvtColor(strp, cv2.COLOR_BGR2HV)
-    #strp = row_cluster(strp, K=1)
-    #strp = col_cluster(strp, K=25) # cluster the rows 
-    strp -= np.array([134.06326531, 99, 45]) # subtract the bluey base resistor color
-    #strp -= np.array([197, 222, 10]) # subtract the bluey base resistor color
+    base = np.array([134.06326531, 99, 45]) # subtract the bluey base resistor color
+    strp -= base
     #strp -= np.mean(strp, axis=(0,1))
     
     avgs = np.mean(strp_, axis=(0,)) # average color along columns of rgb values
@@ -49,16 +46,15 @@ def gradient(strp_: np.ndarray):
     #mag = np.mean(strp, axis=(0,2)) # average color value (average of averages of rgb) along columns
     ints = np.mean(np.sqrt(np.sum(np.square(strp), axis=2)), axis=(0))
 
-    peaks = scipy.signal.find_peaks(ints,
-                                    height=1,
+    bands, _ = scipy.signal.find_peaks(ints,
+                                    height=2,
                                     threshold=None,
-                                    distance=80,
+                                    distance=50,
                                     prominence=15,
                                     wlen=None,
                                     width=None,
                                     rel_height=0.5,
                                     plateau_size=None)
-    bands = peaks[0]
     colors = [np.mean(avgs[band-10:band+10], axis=(0)) for band in bands]
     return strp.astype(np.uint8), avgs, ints, bands, colors
 
@@ -85,8 +81,6 @@ if __name__ == "__main__":
     #im = cv2.GaussianBlur(im, (13,13), 0)
     im = cv2.bilateralFilter(im, 25, 75, 75) 
 
-    ret, binary = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 180, 255, cv2.THRESH_BINARY_INV)
-    center = [ round(np.average(indices)) for indices in np.where(binary >= 255) ] 
     ends = endpoints(im)
     marked = mark_ends(im, ends)
     cropped = isolate(im, ends)
@@ -101,9 +95,11 @@ if __name__ == "__main__":
     for band in bands:
         cropped = cv2.rectangle(cropped, (band-2, 0), (band+2, len(cropped)), color=(50,0,250), thickness=-1)
 
-
+    ret, binary = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 180, 255, cv2.THRESH_BINARY_INV)
+    center = [ round(np.average(indices)) for indices in np.where(binary >= 255) ] 
     cv2.circle(marked, center, 50, (0, 250, 0), 10)
-    #imshow('im', marked, .25)
+    
+    imshow('im', marked, .25)
     imshow('cropped', cropped)
     imshow('processed', strp)
     #imshow('bin', binary, 0.25)
