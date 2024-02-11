@@ -1,4 +1,4 @@
-from utils import *
+from utils import np, cv2, imshow, imscale, time
 from picamera2 import Picamera2
 
 pc2 = Picamera2()
@@ -16,9 +16,9 @@ while 1:
     ms = np.shape(marked)
     marked = cv2.circle(marked, (ms[1]//2, ms[0]//2), 5, (50, 0, 250), 2)
 
-    imshow('im', marked, 0.25)
+    imshow('im', marked, 0.8)
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        cv2.imwrite(f"{save}{c}a.png", im)
+        cv2.imwrite(f"{save}{c}c.png", im)
         c += 1
         print(f"saved: {c}")
         time.sleep(1)
