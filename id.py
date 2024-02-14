@@ -1,3 +1,4 @@
+from os import walk
 from utils import *
 
 def band_colors(strp: np.ndarray):
@@ -18,49 +19,62 @@ def band_colors(strp: np.ndarray):
     return base, avgs, ints, bandpos, bandcolors
 
 def endpoints(im: np.ndarray):
-    center = [950, 1231], [1452, 816] # im0
-    #center = [777, 1-62], [1302, 648] # im1
-    #center = [1914, 881], [1473, 388] # im2
+    ends = [950, 1231], [1452, 816] # im0
+    #ends = [777, 1-62], [1302, 648] # im1
+    #ends = [1914, 881], [1473, 388] # im2
 
     hsl = cv2.cvtColor(im, cv2.COLOR_BGR2HLS)
-    mask = (hsl[:,:,2] > 50).astype(np.uint8)
-    masked = im*np.expand_dims(mask, -1)
-    stats = cv2.connectedComponentsWithStats(mask)
-    print(bold, blue, len(stats), endc)
-    print(bold, blue, len(stats[0]), endc)
-    print(bold, green, stats[0][4], endc)
-    for i in stats[:,cv2.CC_STAT_AREA]:
-        print(bold, i, endc)
+    lightmask = (hsl[:,:,2] > 50).astype(np.uint8)
+    #lightmasked = im*np.expand_dims(mask, -1) 
+    numlabels, labels, values, centroids = cv2.connectedComponentsWithStats(lightmask)
+    #[print(bold, e, endc) for e in  values]
 
+    rmask = np.zeros(labels.shape, dtype=np.uint8)
+    for i in range(numlabels):
+        mass = values[i,4]
+        if (mass > 5000) and (mass < 120000):
+            rmask += (labels==i).astype(np.uint8)
+
+    contours, heirarchy = cv2.findContours(rmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contour = np.concatenate(contours).squeeze()
+    hull = cv2.convexHull(contour)
+    rect = cv2.minAreaRect(hull)
+    rpoints = cv2.boxPoints(rect).astype(np.int32)
+    centroid = 
     
-    return center, hsl, mask, masked
+    im =  cv2.drawContours(im, [hull], 0, (100,0,255), 10)
+    im =  cv2.drawContours(im, [rpoints], 0, (0,255,0), 10)
+    imshow('rmask', rmask*255, 0.25)
+    return ends, hsl, #rmask, rmasked
 
 fig, ax = plt.subplots()
 ax.set_prop_cycle(color=["blue", "green", "red", "black"])
 if __name__ == "__main__":
-    im = load_test_im("0.png")
+    im = load_test_im("c0.png")
     print("jkbhsdfbhjvsdfvbhj")
     #print(f"{green}image has dimensions:{im.shape}{endc}")
     #im = cv2.GaussianBlur(im, (13,13), 0)
     im = cv2.bilateralFilter(im, 35, 75, 75) 
 
-    ends, hsl, mask, masked = endpoints(im)
+    #ends, hsl, rmask, rmasked = endpoints(im)
+    ends, hsl = endpoints(im)
+    
+
+
     marked = mark_ends(im, ends)
-    cropped = isolate(im, ends)
-    strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
+    #cropped = isolate(im, ends)
+    #strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
     
     #[print(f"{blue}{c.rgb}: {c.proportion:.3f}{endc}") for c in cg.extract(Image.fromarray(np.flip(im, axis=-1)), 5)]
     
-    ax.plot(avgs)
-    ax.plot(intensity)
-    ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange" )
+    #ax.plot(avgs)
+    #ax.plot(intensity)
+    #ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange" )
     
     imshow('im', marked, .25)
     #imshow('cropped', cropped)
-    imshow('processed', mark_bands(strp, bandpos))
+    #imshow('processed', mark_bands(strp, bandpos))
     #imshow('bin', binary, 0.25)
-    imshow('mask', mask*255, 0.25)
-    imshow('masked', masked, 0.25)
     #imshow('vis', visualize_bands(colors), 0.25)
     plt.show()
     cv2.waitKey(0)
