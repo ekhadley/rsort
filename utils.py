@@ -14,6 +14,9 @@ import scipy
 
 #ret, binary = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 180, 255, cv2.THRESH_BINARY_INV)
 
+def norm(arr, axis=0):
+    return np.sqrt(np.sum(np.square(arr), axis=axis))
+
 def mark_ends(im: np.ndarray, ends: tuple):
     assert len(ends) == 2, f"expected 2 end points, got {len(ends)}"
     end1, end2 = ends
@@ -37,7 +40,6 @@ def isolate(im: np.ndarray, ends: tuple):
     #if a < 0: a += 360
     out = rotate_image(im, -a, center=(x1, y1))
     dist = int(np.linalg.norm((x1-x2, y1-y2)))
-    #out = out[y1-30:y1+30, x1+50:x1+dist-50].astype(np.float32)
     out = out[y1-30:y1+30, x1+50:x1+dist-50]
     return out # the slice used for color gradient examination
 
@@ -72,19 +74,12 @@ def imshow(name, img, s=1.0, wait=False):
     cv2.imshow(name, imscale(img, s))
     if wait: cv2.waitKey(0)
 
-def _relpix(img, *args):
-    h, w, _ = img.shape
-    if len(args) == 1 and isinstance(args[0], tuple):
-        x, y = args[0]
-    elif len(args) == 2 and isinstance(args[0], float) and isinstance(args[1], float):
-        x, y = args
-    else: raise TypeError(f"expected 2 float args or tuple of 2 floats, got args: {args}")
-    return int(y*h), int(x*w)
-
 def rotate_image(image, degrees, center=None):
+    imshow("123123", image, s=0.25, wait=True)
     if center is None:
         h, w, _ = image.shape
-        center = (w//2, h//2)
+        center = (int(w//2), int(h//2))
+    else: center = (int(center[0]//2), int(center[1]//2))
     mat = cv2.getRotationMatrix2D(center, angle=degrees, scale=1.0)
     result = cv2.warpAffine(image, mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result

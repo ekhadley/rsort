@@ -19,7 +19,7 @@ def band_colors(strp: np.ndarray):
     return base, avgs, ints, bandpos, bandcolors
 
 def endpoints(im: np.ndarray):
-    ends = [950, 1231], [1452, 816] # im0
+    #ends = [950, 1231], [1452, 816] # im0
     #ends = [777, 1-62], [1302, 648] # im1
     #ends = [1914, 881], [1473, 388] # im2
 
@@ -37,43 +37,45 @@ def endpoints(im: np.ndarray):
 
     contours, heirarchy = cv2.findContours(rmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contour = np.concatenate(contours).squeeze()
-    hull = cv2.convexHull(contour)
-    rect = cv2.minAreaRect(hull)
-    rpoints = cv2.boxPoints(rect).astype(np.int32)
-    centroid = 
-    
-    im =  cv2.drawContours(im, [hull], 0, (100,0,255), 10)
-    im =  cv2.drawContours(im, [rpoints], 0, (0,255,0), 10)
-    imshow('rmask', rmask*255, 0.25)
-    return ends, hsl, #rmask, rmasked
+    hull = cv2.convexHull(contour).squeeze()
+    #rect = cv2.minAreaRect(hull)
+    #rpoints = cv2.boxPoints(rect).astype(np.int32)
+    center = np.mean(hull, axis=0, dtype=np.int32)
+    dists1 = norm(hull-center, axis=1)
+    end1 = hull[np.argmax(dists1)]
+
+    dists2 = norm(hull-end1, axis=1)
+    end2 = hull[np.argmax(dists2)]
+
+    im_ = cv2.circle(im.copy(), center, 30, (255, 0, 150), 10)
+    im_ = cv2.circle(im_, end1, 30, (255, 0, 150), 10)
+    im_ = cv2.circle(im_, end2, 30, (255, 0, 150), 10)
+    im_ =  cv2.drawContours(im_, [hull], 0, (100,0,255), 5)
+    #im =  cv2.drawContours(im, [rpoints], 0, (0,255,0), 10)
+    imshow('im', im_, 0.25)
+    return (end1, end2)
 
 fig, ax = plt.subplots()
 ax.set_prop_cycle(color=["blue", "green", "red", "black"])
 if __name__ == "__main__":
-    im = load_test_im("c0.png")
+    im = load_test_im("1.png")
     print("jkbhsdfbhjvsdfvbhj")
     #print(f"{green}image has dimensions:{im.shape}{endc}")
     #im = cv2.GaussianBlur(im, (13,13), 0)
     im = cv2.bilateralFilter(im, 35, 75, 75) 
 
-    #ends, hsl, rmask, rmasked = endpoints(im)
-    ends, hsl = endpoints(im)
-    
-
-
-    marked = mark_ends(im, ends)
-    #cropped = isolate(im, ends)
-    #strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
+    ends = endpoints(im)
+    cropped = isolate(im, ends)
+    strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
     
     #[print(f"{blue}{c.rgb}: {c.proportion:.3f}{endc}") for c in cg.extract(Image.fromarray(np.flip(im, axis=-1)), 5)]
     
-    #ax.plot(avgs)
-    #ax.plot(intensity)
-    #ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange" )
+    ax.plot(avgs)
+    ax.plot(intensity)
+    ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange" )
     
-    imshow('im', marked, .25)
-    #imshow('cropped', cropped)
-    #imshow('processed', mark_bands(strp, bandpos))
+    imshow('cropped', cropped)
+    imshow('processed', mark_bands(strp, bandpos))
     #imshow('bin', binary, 0.25)
     #imshow('vis', visualize_bands(colors), 0.25)
     plt.show()
