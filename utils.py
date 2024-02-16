@@ -1,7 +1,6 @@
 import cv2, time, os, platform, math
 import numpy as np
 import colorgram as cg
-from PIL import Image
 from tqdm import trange
 import matplotlib
 import matplotlib.pyplot as plt
@@ -14,6 +13,12 @@ import scipy
 
 #ret, binary = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 180, 255, cv2.THRESH_BINARY_INV)
 
+def lightness(arr):
+    assert 3 in arr.shape, f"{yellow}array must contain a dimension of length 3 for RGB values. got input shape: {arr.shape}{endc}"
+    cdim = arr.shape.index(3)
+    light = np.amax(arr, axis=cdim) - np.amin(arr, axis=cdim)
+    return light
+
 def norm(arr, axis=0):
     return np.sqrt(np.sum(np.square(arr), axis=axis))
 
@@ -22,26 +27,28 @@ def mark_ends(im: np.ndarray, ends: tuple):
     end1, end2 = ends
     x1, y1, x2, y2 = *end1, *end2
     out = cv2.circle(im.copy(), (x1, y1), 30, (0, 0, 255), 10)
-    out = cv2.circle(out,  (x2, y2), 30, (0, 0, 255), 10)
+    out = cv2.circle(out, (x2, y2), 30, (0, 0, 255), 10)
     return out
-
-def crop_to_ends(im: np.ndarray, points: tuple):
-    end1, end2 = points
-    x1, y1, x2, y2 = *end1, *end2
-    if x1 > x2: x1, x2 = x2, x1
-    if y1 > y2: y1, y2 = y2, y1
-    return im.copy()[y1-50:y2+50, x1-50:x2+50]
 
 def isolate(im: np.ndarray, ends: tuple):
     end1, end2 = ends
+    if end1[0] > end2[0]: end1, end2 = end2, end1
     x1, y1, x2, y2 = *end1, *end2
-    a = math.degrees(math.atan2(y2-y1, x2-x1))
-    a = abs(a)
-    #if a < 0: a += 360
-    out = rotate_image(im, -a, center=(x1, y1))
-    dist = int(np.linalg.norm((x1-x2, y1-y2)))
-    out = out[y1-30:y1+30, x1+50:x1+dist-50]
+    a = math.degrees(math.atan2(y1-y2, x2-x1))
+    if a < 0: a += 360
+    out = rotate_image(im, -abs(a), center=(x1, y1))
+    dist = int(math.sqrt((x1-x2)**2 +  (y1-y2)**2))
+    out = out[y1-30:y1+30, x1+70:x1+dist-70]
     return out # the slice used for color gradient examination
+
+def rotate_image(image, degrees, center=None):
+    if center is None:
+        h, w, _ = image.shape
+        center = (w//2, h//2)
+    else: center = (int(center[0]), int(center[1]))
+    mat = cv2.getRotationMatrix2D(center, angle=degrees, scale=1.0)
+    result = cv2.warpAffine(image, mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+    return result
 
 def visualize_bands(colors, scale=5.0):
     s = int(100*scale)
@@ -57,7 +64,6 @@ def mark_bands(strp, bandpos):
         out = cv2.rectangle(out, (band-2, 0), (band+2, strp.shape[0]), (100, 10, 250), -1)
     return out
 
-
 def load_test_im(name):
     system = platform.system()
     if system == "Windows": idir = "D:\\wgmn\\rsort\\ims"
@@ -70,19 +76,9 @@ def imscale(img, s):
     assert not 0 in img.shape, "empty src image"
     return cv2.resize(img, (round(len(img[0])*s), round(len(img)*s)), interpolation=cv2.INTER_NEAREST)
 
-def imshow(name, img, s=1.0, wait=False):
+def imshow(name, img, s=0.25, wait=False):
     cv2.imshow(name, imscale(img, s))
     if wait: cv2.waitKey(0)
-
-def rotate_image(image, degrees, center=None):
-    imshow("123123", image, s=0.25, wait=True)
-    if center is None:
-        h, w, _ = image.shape
-        center = (int(w//2), int(h//2))
-    else: center = (int(center[0]//2), int(center[1]//2))
-    mat = cv2.getRotationMatrix2D(center, angle=degrees, scale=1.0)
-    result = cv2.warpAffine(image, mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
-    return result
 
 def row_cluster(strp, K=1):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
