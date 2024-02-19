@@ -22,7 +22,7 @@ def lightness(arr):
 def norm(arr, axis=0):
     return np.sqrt(np.sum(np.square(arr), axis=axis))
 
-def mark_ends(im: np.ndarray, ends: tuple):
+def mark_ends(im: np.ndarray, ends):
     assert len(ends) == 2, f"expected 2 end points, got {len(ends)}"
     end1, end2 = ends
     x1, y1, x2, y2 = *end1, *end2
@@ -30,10 +30,10 @@ def mark_ends(im: np.ndarray, ends: tuple):
     out = cv2.circle(out, (x2, y2), 30, (0, 0, 255), 10)
     return out
 
-def mark_end(im: np.ndarray, end: tuple):
+def mark_end(im: np.ndarray, end):
     return cv2.circle(im.copy(), end, 30, (0, 0, 255), 10)
 
-def isolate(im: np.ndarray, ends: tuple):
+def isolate(im: np.ndarray, ends):
     end1, end2 = ends
     if end1[0] > end2[0]: end1, end2 = end2, end1
     x1, y1, x2, y2 = *end1, *end2
@@ -92,12 +92,12 @@ def load_test_labels():
         data = json.load(f)
     return data
 
-def append_test_label(data):
+def save_test_label(data):
     tdir = get_test_dir()
     path = os.path.join(tdir, "labels.json")
     with open(path, "r") as f:
         labels = json.load(f)
-    labels["labels"].append(data)
+    labels[data["name"]] = data
     with open(path, "w") as f:
         json.dump(labels, f)
     return
@@ -109,7 +109,7 @@ def imscale(img, s):
     else: h, w, _ = img.shape
     return cv2.resize(img, (round(w*s), round(h*s)), interpolation=cv2.INTER_NEAREST)
 
-def imshow(name, img, s=1, wait=False):
+def imshow(name, img, s=1.0, wait=False):
     cv2.imshow(name, imscale(img, s))
     if wait: cv2.waitKey(0)
 
@@ -130,13 +130,26 @@ def col_cluster(strp_: np.ndarray, K=15):
 
 def resistor_value(colors):
     val = 0
-    for i, color in enumerate(colors):
-        val += color_code[color]*10**i
+    for i in range(len(colors)-2):
+        bandval = color_code[colors[i]]
+        val = val*10 + bandval
+    val *= 10**color_code[colors[-2]]
+    return val
 
+color_code = {"black": 0,
+              "brown": 1,
+              "red": 2,
+              "orange": 3,
+              "yellow": 4,
+              "green": 5,
+              "blue": 6,
+              "purple": 7,
+              "gray": 8,
+              "white": 9,
+              "gold": -1,
+              "silver": -2}
+tolerance_color_code = {"gold": 0.05, "silver": 0.1}
 
-
-
-color_code = {"black": 0, "brown": 1, "red": 2, "orange": 3, "yellow": 4, "green": 5, "blue": 6, "purple": 7, "gray": 8, "white": 9}
 purple = '\033[95m'
 blue = '\033[94m'
 cyan = '\033[96m'
@@ -151,3 +164,10 @@ gray = "\033[38;5;8m"
 bold = '\033[1m'
 underline = '\033[4m'
 endc = '\033[0m'
+
+
+
+
+
+
+
