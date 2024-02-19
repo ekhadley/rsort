@@ -1,4 +1,4 @@
-import cv2, time, os, platform, math
+import cv2, time, os, platform, math, json
 import numpy as np
 import colorgram as cg
 from tqdm import trange
@@ -30,6 +30,9 @@ def mark_ends(im: np.ndarray, ends: tuple):
     out = cv2.circle(out, (x2, y2), 30, (0, 0, 255), 10)
     return out
 
+def mark_end(im: np.ndarray, end: tuple):
+    return cv2.circle(im.copy(), end, 30, (0, 0, 255), 10)
+
 def isolate(im: np.ndarray, ends: tuple):
     end1, end2 = ends
     if end1[0] > end2[0]: end1, end2 = end2, end1
@@ -50,11 +53,11 @@ def rotate_image(image, degrees, center=None):
     result = cv2.warpAffine(image, mat, image.shape[1::-1], flags=cv2.INTER_LINEAR)
     return result
 
-def visualize_bands(colors, scale=5.0):
+def visualize_bands(colors, scale=1.0):
     s = int(100*scale)
     out = np.zeros((s, s*len(colors), 3), dtype=np.uint8)
     for i, color in enumerate(colors):
-        col = tuple([int(c) for c in color])
+        col = [int(c) for c in color]
         out = cv2.rectangle(out, (s*i, 0), (s*(i+1), s), color=col, thickness=-1)
     return out
 
@@ -64,19 +67,49 @@ def mark_bands(strp, bandpos):
         out = cv2.rectangle(out, (band-2, 0), (band+2, strp.shape[0]), (100, 10, 250), -1)
     return out
 
-def load_test_im(name):
+def get_test_dir():
     system = platform.system()
-    if system == "Windows": idir = "D:\\wgmn\\rsort\\ims"
-    elif system == "Linux": idir = "/home/ek/Desktop/wgmn/rsort/ims"
+    if system == "Windows": return "D:\\wgmn\\rsort\\ims"
+    elif system == "Linux": return "/home/ek/Desktop/wgmn/rsort/ims"
     else: raise FileNotFoundError(f"{bold+red}unknown system: {system}. failed to load image{endc}")
-    path = os.path.join(idir, name)
+
+def load_test_im(name):
+    tdir = get_test_dir()
+    path = os.path.join(tdir, name)
     return cv2.imread(path)
+
+def save_test_labels(labels):
+    tdir = get_test_dir()
+    path = os.path.join(tdir, "labels.json")
+    with open(path, "w") as f:
+        json.dump(data, f)
+    return
+
+def load_test_labels():
+    tdir = get_test_dir()
+    path = os.path.join(tdir, "labels.json")
+    with open(path, "r") as f:
+        data = json.load(f)
+    return data
+
+def append_test_label(data):
+    tdir = get_test_dir()
+    path = os.path.join(tdir, "labels.json")
+    with open(path, "r") as f:
+        labels = json.load(f)
+    labels["labels"].append(data)
+    with open(path, "w") as f:
+        json.dump(labels, f)
+    return
+
 
 def imscale(img, s):
     assert not 0 in img.shape, "empty src image"
-    return cv2.resize(img, (round(len(img[0])*s), round(len(img)*s)), interpolation=cv2.INTER_NEAREST)
+    if len(img.shape) == 2: h, w = img.shape
+    else: h, w, _ = img.shape
+    return cv2.resize(img, (round(w*s), round(h*s)), interpolation=cv2.INTER_NEAREST)
 
-def imshow(name, img, s=0.25, wait=False):
+def imshow(name, img, s=1, wait=False):
     cv2.imshow(name, imscale(img, s))
     if wait: cv2.waitKey(0)
 
@@ -95,6 +128,15 @@ def col_cluster(strp_: np.ndarray, K=15):
     res = center[label.flatten()]
     return res.reshape(strp.shape).swapaxes(0, 1)
 
+def resistor_value(colors):
+    val = 0
+    for i, color in enumerate(colors):
+        val += color_code[color]*10**i
+
+
+
+
+color_code = {"black": 0, "brown": 1, "red": 2, "orange": 3, "yellow": 4, "green": 5, "blue": 6, "purple": 7, "gray": 8, "white": 9}
 purple = '\033[95m'
 blue = '\033[94m'
 cyan = '\033[96m'

@@ -59,7 +59,7 @@ def endpoints(im: np.ndarray):
 fig, ax = plt.subplots()
 #ax.set_prop_cycle(color=["blue", "green", "red", "black"])
 if __name__ == "__main__":
-    im = load_test_im("c2.png")
+    im = load_test_im("0.png")
     im = cv2.bilateralFilter(im, 15, 75, 75) 
 
     ends = endpoints(im)
@@ -69,9 +69,9 @@ if __name__ == "__main__":
     #ax.plot(avgs)
     ax.plot(intensity)
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
-    
-    imshow('marked', mark_ends(im, ends))
+
     #imshow('cropped', cropped)
+    imshow('marked', mark_ends(im, ends), s=0.5)
     imshow('processed', mark_bands(cropped, bandpos))
     #imshow('bin', binary)
     imshow('vis', visualize_bands(bandcolors))
