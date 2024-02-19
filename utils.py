@@ -82,7 +82,7 @@ def save_test_labels(labels):
     tdir = get_test_dir()
     path = os.path.join(tdir, "labels.json")
     with open(path, "w") as f:
-        json.dump(data, f)
+        json.dump(labels, f)
     return
 
 def load_test_labels():
