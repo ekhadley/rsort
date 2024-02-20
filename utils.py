@@ -1,4 +1,4 @@
-import cv2, time, os, platform, math, json
+import cv2, time, os, platform, math, json, random
 import numpy as np
 import colorgram as cg
 from tqdm import trange
@@ -12,6 +12,21 @@ import scipy
 #cv2.circle(marked, center, 50, (0, 250, 0), 10)
 
 #ret, binary = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 180, 255, cv2.THRESH_BINARY_INV)
+
+def showextras(im, extras):
+    fig, ax = plt.subplots()
+    ax.set_prop_cycle(color=["blue", "green", "red", "black"])
+    cropped, strp, ends, intensity, avgs, bandpos, bandcolors = extras
+    ax.plot(avgs)
+    ax.plot(intensity)
+    ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
+    #imshow('cropped', cropped)
+    imshow('marked', mark_ends(im, ends), s=0.25)
+    imshow('processed', mark_bands(cropped, bandpos))
+    imshow('bin', strp)
+    imshow('vis', visualize_bands(bandcolors))
+    plt.show()
+    cv2.destroyAllWindows()
 
 def lightness(arr):
     assert 3 in arr.shape, f"{yellow}array must contain a dimension of length 3 for RGB values. got input shape: {arr.shape}{endc}"
@@ -89,8 +104,26 @@ def load_test_labels():
     tdir = get_test_dir()
     path = os.path.join(tdir, "labels.json")
     with open(path, "r") as f:
-        data = json.load(f)
-    return data
+        #labels = json.load(f, object_hook=json_list_parse)
+        labels = json.load(f)
+    return parse_label_numerics(labels)
+
+def parse_numeric(x):
+    try: return int(x)
+    except: pass
+    try: return float(x)
+    except: pass
+    return x
+
+def parse_label_numerics(label):
+    for key in label.keys():
+        val = label[key]
+        if isinstance(val, dict): label[key] = parse_label_numerics(val)
+        if isinstance(val, list):
+            try: label[key] = np.float32([parse_numeric(e) for e in val])
+            except ValueError: pass
+        else: label[key] = parse_numeric(val)
+    return label
 
 def save_test_label(data):
     tdir = get_test_dir()
@@ -101,7 +134,6 @@ def save_test_label(data):
     with open(path, "w") as f:
         json.dump(labels, f)
     return
-
 
 def imscale(img, s):
     assert not 0 in img.shape, "empty src image"
@@ -128,7 +160,8 @@ def col_cluster(strp_: np.ndarray, K=15):
     res = center[label.flatten()]
     return res.reshape(strp.shape).swapaxes(0, 1)
 
-def resistor_value(colors):
+def resistor_value(_colors, reverse=0):
+    colors = list(reversed(_colors)) if reverse else _colors
     val = 0
     for i in range(len(colors)-2):
         bandval = color_code[colors[i]]
@@ -164,10 +197,6 @@ gray = "\033[38;5;8m"
 bold = '\033[1m'
 underline = '\033[4m'
 endc = '\033[0m'
-
-
-
-
-
+allcolors = [purple, blue, cyan, lime, yellow, red, pink, orange, green, gray]
 
 

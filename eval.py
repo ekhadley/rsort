@@ -1,5 +1,6 @@
 from utils import *
 
+
 def print_data(data):
     print(f"{yellow}name: {data['name']}")
     print(f"{orange}ends: {data['ends']}")
@@ -106,8 +107,7 @@ def label_test_im(imname, _IS=0.3, _SS=2.0):
                 label = input(f"unknown response. ['y', 'n']: ")
             data["reversed"] = int(label=='y')
 
-            bandlabels = list(reversed(data['labels'])) if data["reversed"] else data['labels']
-            try: data["value"] = resistor_value(bandlabels)
+            try: data["value"] = resistor_value(data['labels'], reverse=data['reversed'])
             except KeyError: print(f"{bold+red} FAILED TO DETERMINE VALUE OF RESISTOR. UNKNOWN COLOR LABEL{endc}")
             
             print(f"{bold+lime}Data collected:{endc}")
@@ -118,18 +118,13 @@ def label_test_im(imname, _IS=0.3, _SS=2.0):
             
             cv2.destroyAllWindows(); return;
 
-def label_test_dir():
+def test_dir_manual_label():
     tdir = get_test_dir()
     imnames = [e for e in os.listdir(tdir) if e.endswith(("png", "jpg", "jpeg"))]
     for name in imnames:
         imname = os.path.join(tdir, name)
         label_test_im(imname)
 
-if __name__ == "__main__":
-    #label_test_im("1.png")
-    #label_test_dir()
-    labels = load_test_labels()
-    values = []
-    for label in labels:
-        print(labels[label]['value'])
 
+if __name__ == "__main__":
+    labels = load_test_labels()
