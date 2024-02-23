@@ -15,10 +15,11 @@ import scipy
 
 def showextras(im, extras):
     fig, ax = plt.subplots()
-    ax.set_prop_cycle(color=["blue", "green", "red", "black"])
+    ax.set_prop_cycle(color=["blue", "green", "red", "black", "purple"])
     cropped, strp, ends, intensity, avgs, bandpos, bandcolors = extras
     ax.plot(avgs)
     ax.plot(intensity)
+    ax.plot(np.diff(intensity))
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
     #imshow('cropped', cropped)
     imshow('marked', mark_ends(im, ends), s=0.25)
@@ -54,7 +55,7 @@ def isolate(im: np.ndarray, ends):
     x1, y1, x2, y2 = *end1, *end2
     a = math.degrees(math.atan2(y1-y2, x2-x1))
     if a < 0: a += 360
-    out = rotate_image(im, -abs(a), center=(x1, y1))
+    out = rotate_image(im, -a, center=(x1, y1))
     dist = int(math.sqrt((x1-x2)**2 +  (y1-y2)**2))
     out = out[y1-30:y1+30, x1+70:x1+dist-70]
     return out # the slice used for color gradient examination
@@ -108,21 +109,14 @@ def load_test_labels():
         labels = json.load(f)
     return parse_label_numerics(labels)
 
-def parse_numeric(x):
-    try: return int(x)
-    except: pass
-    try: return float(x)
-    except: pass
-    return x
-
 def parse_label_numerics(label):
     for key in label.keys():
         val = label[key]
-        if isinstance(val, dict): label[key] = parse_label_numerics(val)
+        if isinstance(val, dict):
+            label[key] = parse_label_numerics(val)
         if isinstance(val, list):
-            try: label[key] = np.float32([parse_numeric(e) for e in val])
+            try: label[key] = np.float32(val)
             except ValueError: pass
-        else: label[key] = parse_numeric(val)
     return label
 
 def save_test_label(data):

@@ -128,3 +128,4 @@ def test_dir_manual_label():
 
 if __name__ == "__main__":
     labels = load_test_labels()
+    #test_dir_manual_label()

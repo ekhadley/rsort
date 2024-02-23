@@ -1,5 +1,5 @@
 from os import walk
-from eval import print_data
+from eval import print_data, markends
 from utils import *
 
 def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50, peakProminence=20, peakWidth=20, peakRelHeight=0.5, bandSampleWidth=10):
@@ -56,14 +56,14 @@ def label_color(colors):
 
 def identify(im):
     h, w, _ = im.shape
-    blur = cv2.bilateralFilter(im, 15, 75, 75) 
-    ends = endpoints(blur)
+    #blur = cv2.bilateralFilter(im, 30, 75, 75) 
+    ends = endpoints(im)
     cropped = isolate(im, ends)
     strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
 
     scaled_ends = ends.astype(np.float32)
-    scaled_ends[0] /= w
-    scaled_ends[1] /= h
+    scaled_ends[:,0] /= w
+    scaled_ends[:,1] /= h
     scaled_bandpos = bandpos/strp.shape[1]
     info = {"name": "",
             "ends": scaled_ends,
@@ -75,19 +75,56 @@ def identify(im):
     return info, cropped, strp, ends, intensity, avgs, bandpos, bandcolors
 
 def grade(auto, label):
-    print(f"{bold+cyan}auto:{auto['ends']}, label:{label['ends']}{endc}")
+    print(f"{bold+cyan}auto:{auto['ends']},\nlabel:{label['ends']}{endc}")
     print(f"{bold+green}auto:{auto['bands']}, label:{label['bands']}{endc}")
     for i, color in enumerate(auto['colors']):
         print(f"{bold+blue}colors {i}: auto:{color}, label:{label['colors'][i]} = {label['labels'][i]}{endc}")
 
+    aends, lends = auto['ends'], label['ends']
+    disps = [aends - lends, [aends[1], aends[0]] - lends]
+    enddists = [np.linalg.norm(disps[0], axis=1), np.linalg.norm(disps[1], axis=1)]
+    enddist = enddists[np.argmin([sum(e) for e in enddists])]
+    endscore = max(enddist)
+    print(f"{bold+red} end score: {endscore}{endc}")
+
+    abands, lbands = auto['bands'], label['bands']
+    #lbands = list(reversed(lbands)) if label['reversed'] else lbands
+    #lbands = 1-lbands if label['reversed'] else lbands
+    banddists = np.abs(abands - lbands)
+    bandscore = max(banddists)   
+    print(f"{bold+purple} band score: {bandscore}, (reversed={label['reversed']}){endc}")
+    print(f"{bold+pink} label reversed:{label['reversed']==1} {endc}")
+    amean, lmean = np.mean(abands), np.mean(lbands)
+    print(f"{bold+lime} autoband d2center: {abands-amean}, labelband d2center: {lbands-lmean}{endc}")
+
+    acolors, lcolors = auto['colors'], label['colors']
+    colordisps = acolors - lcolors
+    colordists = np.linalg.norm(colordisps, axis=-1)
+    colorscore = max(colordists)
+    print(f"{bold+blue} color score: {colorscore}{endc}")
+
+
+# todo: orientation detection, color labeling
+# unless... :flushed:
+# we don't **technically** need to know the value of a resistor to sort them.
+# we just need to put  them into bins of their own kind.
+# orientation detection and color labelling are only actually necessary for 
+# determining ohm value, not for differnetiating two resistors
+# except aactualyyyyyyyy a resistor can have the same colors in opposite
+# order, so we maybe can't just look for the orientation of minimal distance
+# cause could give false positive? idk.
+# so basically if a resistor's colors match NONE of the previously seen ones,
+# we don't have to check orientation to declare it as new. If it has the same
+# colors (forward or back) as any other we have to check orientation.
 if __name__ == "__main__":
-    im = load_test_im("0.png")
+    im = load_test_im("3.png")
+    im = cv2.bilateralFilter(im, 15, 25, 25) 
     info, *extras = identify(im)
     labels = load_test_labels()
-    label = labels["/home/ek/Desktop/wgmn/rsort/ims/0.png"]
+    label = labels["/home/ek/Desktop/wgmn/rsort/ims/3.png"]
     grade(info, label)
     
-    #showextras(im, extras)
+    showextras(im, extras)
     cv2.destroyAllWindows()
 
 """
