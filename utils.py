@@ -14,14 +14,14 @@ import scipy
 #ret, binary = cv2.threshold(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), 180, 255, cv2.THRESH_BINARY_INV)
 
 def showextras(im, extras):
-    fig, ax = plt.subplots()
-    ax.set_prop_cycle(color=["blue", "green", "red", "black", "purple"])
+    _, ax = plt.subplots()
+    ax.set_prop_cycle(color=["blue", "green", "red", "black", "orange"])
     cropped, strp, ends, intensity, avgs, bandpos, bandcolors = extras
     ax.plot(avgs)
     ax.plot(intensity)
-    ax.plot(np.diff(intensity))
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
-    #imshow('cropped', cropped)
+    ax.plot(10*np.diff(intensity), color="purple")
+    imshow('cropped', cropped)
     imshow('marked', mark_ends(im, ends), s=0.25)
     imshow('processed', mark_bands(cropped, bandpos))
     imshow('bin', strp)

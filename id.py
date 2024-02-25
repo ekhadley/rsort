@@ -1,5 +1,3 @@
-from os import walk
-from eval import print_data, markends
 from utils import *
 
 def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50, peakProminence=20, peakWidth=20, peakRelHeight=0.5, bandSampleWidth=10):
@@ -22,11 +20,37 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50,
                                     width=peakWidth,
                                     rel_height=peakRelHeight,
                                     plateau_size=None)
+    
+    #delta = 10*np.diff(ints)
+    #pppos, _ = scipy.signal.find_peaks(delta,
+    #                                height=1,
+    #                                threshold=None,
+    #                                distance=1,
+    #                                prominence=20,
+    #                                wlen=None,
+    #                                width=0,
+    #                                rel_height=0.5,
+    #                                plateau_size=None)
+    #nppos, _ = scipy.signal.find_peaks(-delta,
+    #                                height=1,
+    #                                threshold=None,
+    #                                distance=1,
+    #                                prominence=20,
+    #                                wlen=None,
+    #                                width=0,
+    #                                rel_height=0.5,
+    #                                plateau_size=None)
+    #print(bold, green, pppos, nppos, endc)
+    #ppos = np.concatenate((pppos, nppos))
+    #plt.plot(ints, color="blue")
+    #plt.plot(delta, color="purple")
+    #plt.plot(ppos, delta[ppos], "o", ms=10, color="orange")
+    #plt.show()
+    
     bandcolors = [np.mean(strp[:,band-bandSampleWidth//2:band+bandSampleWidth//2], axis=(0,1)) for band in bandpos]
     return base, avgs, ints, bandpos, np.rint(bandcolors)
 
-def endpoints(im: np.ndarray, lightThresh=35, lowerMass=5000, upperMass=120000):
-    #light = (np.amax(im, axis=-1) - np.amin(im, axis=-1)) # lightness from hsl scale
+def endpoints(im: np.ndarray, lightThresh=30, lowerMass=5000, upperMass=120000):
     light = lightness(im)
     lightmask = (light>lightThresh).astype(np.uint8)
     
@@ -49,6 +73,14 @@ def endpoints(im: np.ndarray, lightThresh=35, lowerMass=5000, upperMass=120000):
     
     dists2 = np.sum(np.square(hull-end1), axis=1)
     end2 = hull[np.argmax(dists2)]
+
+    
+    imshow("rmask", 255*rmask, s=0.25)
+    imm = cv2.drawContours(im.copy(), contours, -1, (250,0,250), 5)
+    imm = cv2.drawContours(imm, [hull], -1, (0,250,250), 5)
+    imshow("immm", imm, s=0.25)
+    print(bold, green, end1-center, np.linalg.norm(end1-center), end2-center, np.linalg.norm(end2-center), endc)
+    
     return np.array([end1, end2])
 
 def label_color(colors):
@@ -93,7 +125,6 @@ def grade(auto, label):
     banddists = np.abs(abands - lbands)
     bandscore = max(banddists)   
     print(f"{bold+purple} band score: {bandscore}, (reversed={label['reversed']}){endc}")
-    print(f"{bold+pink} label reversed:{label['reversed']==1} {endc}")
     amean, lmean = np.mean(abands), np.mean(lbands)
     print(f"{bold+lime} autoband d2center: {abands-amean}, labelband d2center: {lbands-lmean}{endc}")
 
@@ -118,7 +149,7 @@ def grade(auto, label):
 # colors (forward or back) as any other we have to check orientation.
 if __name__ == "__main__":
     im = load_test_im("3.png")
-    im = cv2.bilateralFilter(im, 15, 25, 25) 
+    im = cv2.bilateralFilter(im, 25, 25, 25) 
     info, *extras = identify(im)
     labels = load_test_labels()
     label = labels["/home/ek/Desktop/wgmn/rsort/ims/3.png"]
