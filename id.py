@@ -120,10 +120,10 @@ def grade(auto, label):
     print(f"{bold+red} end score: {endscore}{endc}")
 
     abands, lbands = auto['bands'], label['bands']
-    #lbands = list(reversed(lbands)) if label['reversed'] else lbands
+    lbands = list(reversed(lbands)) if label['reversed'] else lbands
     #lbands = 1-lbands if label['reversed'] else lbands
     banddists = np.abs(abands - lbands)
-    bandscore = max(banddists)   
+    bandscore = max(banddists)
     print(f"{bold+purple} band score: {bandscore}, (reversed={label['reversed']}){endc}")
     amean, lmean = np.mean(abands), np.mean(lbands)
     print(f"{bold+lime} autoband d2center: {abands-amean}, labelband d2center: {lbands-lmean}{endc}")
