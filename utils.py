@@ -20,7 +20,7 @@ def showextras(im, extras):
     ax.plot(avgs)
     ax.plot(intensity)
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
-    ax.plot(10*np.diff(intensity), color="purple")
+    #ax.plot(10*np.diff(intensity), color="purple")
     imshow('cropped', cropped)
     imshow('marked', mark_ends(im, ends), s=0.25)
     imshow('processed', mark_bands(cropped, bandpos))

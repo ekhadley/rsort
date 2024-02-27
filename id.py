@@ -147,12 +147,13 @@ def grade(auto, label):
 # so basically if a resistor's colors match NONE of the previously seen ones,
 # we don't have to check orientation to declare it as new. If it has the same
 # colors (forward or back) as any other we have to check orientation.
+# also we should 
 if __name__ == "__main__":
     im = load_test_im("3.png")
     im = cv2.bilateralFilter(im, 25, 25, 25) 
     info, *extras = identify(im)
     labels = load_test_labels()
-    label = labels["/home/ek/Desktop/wgmn/rsort/ims/3.png"]
+    label = labels["/home/ek/Desktop/wgmn/rsort/ims/0.png"]
     grade(info, label)
     
     showextras(im, extras)
