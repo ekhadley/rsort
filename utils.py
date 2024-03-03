@@ -24,7 +24,7 @@ def showextras(im, extras):
     imshow('cropped', cropped)
     imshow('marked', mark_ends(im, ends), s=0.25)
     imshow('processed', mark_bands(cropped, bandpos))
-    imshow('bin', strp)
+    #imshow('bin', strp)
     imshow('vis', visualize_bands(bandcolors))
     plt.show()
     cv2.destroyAllWindows()
@@ -80,7 +80,7 @@ def visualize_bands(colors, scale=1.0):
 def mark_bands(strp, bandpos):
     out = np.array(strp, copy=True)
     for band in bandpos:
-        out = cv2.rectangle(out, (band-2, 0), (band+2, strp.shape[0]), (100, 10, 250), -1)
+        out = cv2.rectangle(out, (band-1, 0), (band+1, strp.shape[0]), (100, 10, 250), -1)
     return out
 
 def get_test_dir():

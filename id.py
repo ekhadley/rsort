@@ -21,12 +21,12 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50,
                                     rel_height=peakRelHeight,
                                     plateau_size=None)
     
-    #delta = 10*np.diff(ints)
+    #delta = np.diff(ints)
     #pppos, _ = scipy.signal.find_peaks(delta,
     #                                height=1,
     #                                threshold=None,
     #                                distance=1,
-    #                                prominence=20,
+    #                                prominence=3,
     #                                wlen=None,
     #                                width=0,
     #                                rel_height=0.5,
@@ -35,17 +35,27 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50,
     #                                height=1,
     #                                threshold=None,
     #                                distance=1,
-    #                                prominence=20,
+    #                                prominence=3,
     #                                wlen=None,
     #                                width=0,
     #                                rel_height=0.5,
     #                                plateau_size=None)
-    #print(bold, green, pppos, nppos, endc)
-    #ppos = np.concatenate((pppos, nppos))
+    #ppos = np.sort(np.concatenate((pppos, nppos)))
+    #bandbounds = []
+    #for band in bandpos:
+    #    for i, bound in enumerate(ppos):
+    #        if band > bound and band < ppos[i+1]:
+    #            bandbounds.append((ppos[i], ppos[i+1]))
+    #            break
+    #
+    #xyz = []
+    #for b1, b2 in bandbounds: xyz.append(b1); xyz.append(b2);
     #plt.plot(ints, color="blue")
     #plt.plot(delta, color="purple")
-    #plt.plot(ppos, delta[ppos], "o", ms=10, color="orange")
+    #plt.plot(xyz, delta[xyz], "o", ms=10, color="orange")
     #plt.show()
+    #imshow("skdvfbbhjvsdf", mark_bands(strp, xyz), s=3)
+    #bandcolors = [np.mean(strp[:,b1:b2], axis=(0,1)) for b1, b2 in bandbounds]
     
     bandcolors = [np.mean(strp[:,band-bandSampleWidth//2:band+bandSampleWidth//2], axis=(0,1)) for band in bandpos]
     return base, avgs, ints, bandpos, np.rint(bandcolors)
@@ -74,17 +84,12 @@ def endpoints(im: np.ndarray, lightThresh=30, lowerMass=5000, upperMass=120000):
     dists2 = np.sum(np.square(hull-end1), axis=1)
     end2 = hull[np.argmax(dists2)]
 
-    
-    imshow("rmask", 255*rmask, s=0.25)
-    imm = cv2.drawContours(im.copy(), contours, -1, (250,0,250), 5)
-    imm = cv2.drawContours(imm, [hull], -1, (0,250,250), 5)
-    imshow("immm", imm, s=0.25)
-    print(bold, green, end1-center, np.linalg.norm(end1-center), end2-center, np.linalg.norm(end2-center), endc)
+    #imshow("rmask", 255*rmask, s=0.25)
+    #imm = cv2.drawContours(im.copy(), contours, -1, (250,0,250), 5)
+    #imm = cv2.drawContours(imm, [hull], -1, (0,250,250), 5)
+    #imshow("immm", imm, s=0.25)
     
     return np.array([end1, end2])
-
-def label_color(colors):
-    pass
 
 def identify(im):
     h, w, _ = im.shape
@@ -111,29 +116,67 @@ def grade(auto, label):
     print(f"{bold+green}auto:{auto['bands']}, label:{label['bands']}{endc}")
     for i, color in enumerate(auto['colors']):
         print(f"{bold+blue}colors {i}: auto:{color}, label:{label['colors'][i]} = {label['labels'][i]}{endc}")
+    print()
 
     aends, lends = auto['ends'], label['ends']
     disps = [aends - lends, [aends[1], aends[0]] - lends]
     enddists = [np.linalg.norm(disps[0], axis=1), np.linalg.norm(disps[1], axis=1)]
     enddist = enddists[np.argmin([sum(e) for e in enddists])]
     endscore = max(enddist)
-    print(f"{bold+red} end score: {endscore}{endc}")
+    print(f"{bold+red} aends: {aends}, lends: {lends}")
+    print(f"end score: {endscore}{endc}")
+    print()
 
     abands, lbands = auto['bands'], label['bands']
-    lbands = list(reversed(lbands)) if label['reversed'] else lbands
-    #lbands = 1-lbands if label['reversed'] else lbands
+    #lbands = list(reversed(1-lbands) if label['reversed'] else lbands
+    lbands = list(reversed(1-lbands))
+    stretch = True
+    if stretch:
+        abands -= abands[0]
+        lbands -= lbands[0]
+        lbands *= abands[-1]/lbands[-1]
+    
     banddists = np.abs(abands - lbands)
-    bandscore = max(banddists)
-    print(f"{bold+purple} band score: {bandscore}, (reversed={label['reversed']}){endc}")
-    amean, lmean = np.mean(abands), np.mean(lbands)
-    print(f"{bold+lime} autoband d2center: {abands-amean}, labelband d2center: {lbands-lmean}{endc}")
+    print(f"{bold+purple}auto:{abands}\nlabel:{lbands}")
+    print(f" largest diff: {max(banddists)}, avg gap: {np.mean(banddists)} (reversed={label['reversed']}){endc}")
+    print()
 
     acolors, lcolors = auto['colors'], label['colors']
     colordisps = acolors - lcolors
     colordists = np.linalg.norm(colordisps, axis=-1)
     colorscore = max(colordists)
     print(f"{bold+blue} color score: {colorscore}{endc}")
+    print()
 
+def label_colors(colors):
+    c1 = {"black": [71, 62, 53],
+          "brown": [70, 64, 77],
+          "red":   [81, 65, 115],
+          "orange":[],
+          "yellow":[66, 124, 103],
+          "green": [],
+          "blue":  [],
+          "purple":[109, 69, 58],
+          "gray":  [],
+          "white": [],
+          "gold":  [110, 116, 124],
+          "silver":[]}
+    labels = []
+    s = {}
+    for color in colors:
+        blab, dist = "", 1e9
+        for lab, bgr in c1.items():
+            if len(bgr) > 0:
+                ndist = np.linalg.norm(np.array(bgr)-np.array(color))
+                s[lab] = ndist
+                if ndist < dist: blab, dist = lab, ndist
+        print(bold, red, color)
+        print(orange, s)
+        print(green, blab, endc)
+        print()
+        s = {}
+        labels.append(blab)
+    return labels
 
 # todo: orientation detection, color labeling
 # unless... :flushed:
@@ -148,17 +191,50 @@ def grade(auto, label):
 # we don't have to check orientation to declare it as new. If it has the same
 # colors (forward or back) as any other we have to check orientation.
 # also we should 
+np.set_printoptions(suppress=True)
 if __name__ == "__main__":
-    im = load_test_im("3.png")
+    im = load_test_im("a0.png")
     im = cv2.bilateralFilter(im, 25, 25, 25) 
     info, *extras = identify(im)
     labels = load_test_labels()
-    label = labels["/home/ek/Desktop/wgmn/rsort/ims/0.png"]
-    grade(info, label)
+    label = labels["/home/ek/Desktop/wgmn/rsort/ims/a0.png"]
+    #grade(info, label)
     
-    showextras(im, extras)
-    cv2.destroyAllWindows()
+    #showextras(im, extras)
+    #cv2.destroyAllWindows()
 
+    obs = {}
+    for name in labels:
+        label = labels[name]
+        print(bold, gray, label, "\n", endc)
+        print(label['labels'])
+        #imshow("asdasd", visualize_bands(label['colors']), s=0.5, wait=True)
+        for i, color in enumerate(label['colors']):
+            clabel = label['labels'][i]
+            if clabel in obs.keys():
+                obs[clabel].append(color)
+            else:
+                obs[clabel] = [color]
+
+    obs = {k:np.array(v) for k, v in obs.items()}
+    avgs = {k:np.mean(v, axis=(0)) for k, v in obs.items()}
+
+    [print(f"{green}{k}:{v}{endc}") for k, v in obs.items()]
+    [print(f"{gray}{k}:{v}{endc}") for k, v in avgs.items()]
+
+    #fig, ax = plt.scatter()
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.set_xlabel("hue")
+    ax.set_ylabel("light")
+    ax.set_zlabel("sat")
+    for col in ["red", "black", "gold", "brown", "purple", "yellow"]:
+        #ax.scatter(obs[col][:,0], obs[col][:,1], obs[col][:,2], color=col)
+        hls = cv2.cvtColor(np.array([obs[col]]), cv2.COLOR_BGR2YCrCb)[0]
+        print(hls)
+        ax.scatter(hls[:,0], hls[:,1], hls[:,2], color=col)
+    plt.show()
+#colorizer
 """
 parameters:
     blur effect:
