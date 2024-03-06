@@ -36,7 +36,7 @@ def endpoint_select(event, x, y, flags, params):
     h, w, _ = im.shape
     if event == cv2.EVENT_LBUTTONUP and (0 <= x <= w) and (0 <= y <= h):
         mousex, mousey = x/(w*IS), y/(h*IS)
-        if len(endpoints) < 2:
+        if (len(endpoints) == 0) or ( (len(endpoints) == 1) and (math.sqrt((endpoints[0][0]-mousex)**2 + (endpoints[0][1]-mousey)**2) > 0.1) ):
             endpoints.append((mousex, mousey))
         elif len(endpoints) == 2:
             dists = [(end[0] - mousex)**2 + (end[1] - mousey)**2 for end in endpoints]
@@ -87,7 +87,9 @@ def label_test_im(imname, _IS=0.3, _SS=2.0):
             imshow("bands", visualize_bands(colors, scale=SS))
 
         key = cv2.waitKey(10) & 0xFF
-        if key == ord('q'): cv2.destroyAllWindows(); return;
+        if key == ord('q'):
+            cv2.destroyAllWindows()
+            return True
         if key == ord('s') and len(endpoints) == 2 and ( 4 <= len(colors) <= 6):
             data = {"name":imname,
                     "ends": endpoints,
@@ -112,20 +114,27 @@ def label_test_im(imname, _IS=0.3, _SS=2.0):
             
             print(f"{bold+lime}Data collected:{endc}")
             print_data(data)
-            if input(f"{bold+lime}To save, press 's' again. To cancel, press 'q': {endc}") == "s":
+            cmd = input(f"{bold+lime}'s' to save, 'r' to restart this datapoint, 'q' to skip without saving: {endc}")
+            while cmd not in ['r', 's', 'q']:
+                cmd = input(f"{bold+lime}input not recognized. inputs are  ['r', 's', 'q']: {endc}")
+            cv2.destroyAllWindows();
+            if cmd == 'r': return False
+            if cmd == 's':
                 save_test_label(data)
-                print("Data saved to data.json")
-            
-            cv2.destroyAllWindows(); return;
+                print(f"{imname} data saved.")
+                
+            return True
 
 def test_dir_manual_label():
     tdir = get_test_dir()
     imnames = [e for e in os.listdir(tdir) if e.endswith(("png", "jpg", "jpeg"))]
     for name in imnames:
         imname = os.path.join(tdir, name)
-        label_test_im(imname)
+        cancontinue = label_test_im(imname)
+        while not cancontinue:
+            cancontinue = label_test_im(imname)
 
 
 if __name__ == "__main__":
-    labels = load_test_labels()
-    #test_dir_manual_label()
+    #labels = load_test_labels()
+    test_dir_manual_label()

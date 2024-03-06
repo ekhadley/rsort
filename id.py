@@ -155,9 +155,9 @@ def label_colors(colors):
           "orange":[],
           "yellow":[66, 124, 103],
           "green": [],
-          "blue":  [],
+          "blue":  [118, 71, 52],
           "purple":[109, 69, 58],
-          "gray":  [],
+          "gray":  [96, 88, 100],
           "white": [],
           "gold":  [110, 116, 124],
           "silver":[]}
@@ -193,13 +193,12 @@ def label_colors(colors):
 # also we should 
 np.set_printoptions(suppress=True)
 if __name__ == "__main__":
-    im = load_test_im("a0.png")
-    im = cv2.bilateralFilter(im, 25, 25, 25) 
-    info, *extras = identify(im)
+    #im = load_test_im("a0.png")
+    #im = cv2.bilateralFilter(im, 25, 25, 25) 
+    #info, *extras = identify(im)
     labels = load_test_labels()
-    label = labels["/home/ek/Desktop/wgmn/rsort/ims/a0.png"]
+    #label = labels["/home/ek/Desktop/wgmn/rsort/ims/a0.png"]
     #grade(info, label)
-    
     #showextras(im, extras)
     #cv2.destroyAllWindows()
 
@@ -228,11 +227,13 @@ if __name__ == "__main__":
     ax.set_xlabel("hue")
     ax.set_ylabel("light")
     ax.set_zlabel("sat")
-    for col in ["red", "black", "gold", "brown", "purple", "yellow"]:
-        #ax.scatter(obs[col][:,0], obs[col][:,1], obs[col][:,2], color=col)
-        hls = cv2.cvtColor(np.array([obs[col]]), cv2.COLOR_BGR2YCrCb)[0]
-        print(hls)
-        ax.scatter(hls[:,0], hls[:,1], hls[:,2], color=col)
+    for col in ["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray"]:
+        cols = obs[col]
+        cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
+        #cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
+        #cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
+        ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col, s=10)
+
     plt.show()
 #colorizer
 """

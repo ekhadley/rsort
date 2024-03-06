@@ -53,10 +53,11 @@ def isolate(im: np.ndarray, ends):
     end1, end2 = ends
     if end1[0] > end2[0]: end1, end2 = end2, end1
     x1, y1, x2, y2 = *end1, *end2
+    dist = int(math.sqrt((x1-x2)**2 +  (y1-y2)**2))
     a = math.degrees(math.atan2(y1-y2, x2-x1))
     if a < 0: a += 360
-    out = rotate_image(im, -a, center=(x1, y1))
-    dist = int(math.sqrt((x1-x2)**2 +  (y1-y2)**2))
+    out = np.pad(im, [(0,dist), (0,dist), (0, 0)], mode='constant')
+    out = rotate_image(out, -a, center=(x1, y1))
     out = out[y1-30:y1+30, x1+70:x1+dist-70]
     return out # the slice used for color gradient examination
 
@@ -85,8 +86,9 @@ def mark_bands(strp, bandpos):
 
 def get_test_dir():
     system = platform.system()
-    if system == "Windows": return "D:\\wgmn\\rsort\\ims"
-    elif system == "Linux": return "/home/ek/Desktop/wgmn/rsort/ims"
+    tdname = "ims2"
+    if system == "Windows": return f"D:\\wgmn\\rsort\\{tdname}"
+    elif system == "Linux": return f"/home/ek/Desktop/wgmn/rsort/{tdname}"
     else: raise FileNotFoundError(f"{bold+red}unknown system: {system}. failed to load image{endc}")
 
 def load_test_im(name):
