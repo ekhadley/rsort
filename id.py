@@ -219,7 +219,7 @@ if __name__ == "__main__":
     obs = {k:np.array(v) for k, v in obs.items()}
     avgs = {k:np.mean(v, axis=(0)) for k, v in obs.items()}
 
-    [print(f"{green}{k}:{v}{endc}") for k, v in obs.items()]
+    [print(f"{pink}{k}:{v}{endc}") for k, v in obs.items()]
     [print(f"{gray}{k}:{v}{endc}") for k, v in avgs.items()]
 
     #fig, ax = plt.scatter()
@@ -228,12 +228,13 @@ if __name__ == "__main__":
     ax.set_xlabel("hue")
     ax.set_ylabel("light")
     ax.set_zlabel("sat")
-    for col in ["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray"]:
+    for i, col in enumerate(["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray"]):
         cols = obs[col]
         cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
         #cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
         #cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
-        ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col, s=10)
+        #ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col, s=10)
+        #ax.scatter(obs[, color=col, s=10)
 
     plt.show()
 #colorizer
