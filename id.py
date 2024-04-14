@@ -21,49 +21,13 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50,
                                     width=peakWidth,
                                     rel_height=peakRelHeight,
                                     plateau_size=None)
-    
-    #delta = np.diff(ints)
-    #pppos, _ = scipy.signal.find_peaks(delta,
-    #                                height=1,
-    #                                threshold=None,
-    #                                distance=1,
-    #                                prominence=3,
-    #                                wlen=None,
-    #                                width=0,
-    #                                rel_height=0.5,
-    #                                plateau_size=None)
-    #nppos, _ = scipy.signal.find_peaks(-delta,
-    #                                height=1,
-    #                                threshold=None,
-    #                                distance=1,
-    #                                prominence=3,
-    #                                wlen=None,
-    #                                width=0,
-    #                                rel_height=0.5,
-    #                                plateau_size=None)
-    #ppos = np.sort(np.concatenate((pppos, nppos)))
-    #bandbounds = []
-    #for band in bandpos:
-    #    for i, bound in enumerate(ppos):
-    #        if band > bound and band < ppos[i+1]:
-    #            bandbounds.append((ppos[i], ppos[i+1]))
-    #            break
-    #
-    #xyz = []
-    #for b1, b2 in bandbounds: xyz.append(b1); xyz.append(b2);
-    #plt.plot(ints, color="blue")
-    #plt.plot(delta, color="purple")
-    #plt.plot(xyz, delta[xyz], "o", ms=10, color="orange")
-    #plt.show()
-    #imshow("skdvfbbhjvsdf", mark_bands(strp, xyz), s=3)
-    #bandcolors = [np.mean(strp[:,b1:b2], axis=(0,1)) for b1, b2 in bandbounds]
-    
+
     bandcolors = [np.mean(strp[:,band-bandSampleWidth//2:band+bandSampleWidth//2], axis=(0,1)) for band in bandpos]
     return base, avgs, ints, bandpos, np.rint(bandcolors)
 
-def endpoints(im: np.ndarray, lightThresh=30, lowerMass=5000, upperMass=120000):
+def endpoints(im: np.ndarray, lightThresh=55, lowerMass=5000, upperMass=120000):
     light = lightness(im)
-    lightmask = (light>lightThresh).astype(np.uint8)
+    lightmask = (light<lightThresh).astype(np.uint8)
     
     numlabels, labels, values, centroids = cv2.connectedComponentsWithStats(lightmask)
 
@@ -85,16 +49,14 @@ def endpoints(im: np.ndarray, lightThresh=30, lowerMass=5000, upperMass=120000):
     dists2 = np.sum(np.square(hull-end1), axis=1)
     end2 = hull[np.argmax(dists2)]
 
-    #imshow("rmask", 255*rmask, s=0.25)
-    #imm = cv2.drawContours(im.copy(), contours, -1, (250,0,250), 5)
-    #imm = cv2.drawContours(imm, [hull], -1, (0,250,250), 5)
-    #imshow("immm", imm, s=0.25)
-    
+    imm = cv2.drawContours(im.copy(), contours, -1, (250,0,250), 5)
+    imm = cv2.drawContours(imm, [hull], -1, (0,250,250), 5)
+    imshow("immm", imm, s=0.25)
     return np.array([end1, end2])
 
 def identify(im):
     h, w, _ = im.shape
-    #blur = cv2.bilateralFilter(im, 30, 75, 75) 
+    blur = cv2.bilateralFilter(im, 30, 75, 75) 
     ends = endpoints(im)
     cropped = isolate(im, ends)
     strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
@@ -194,47 +156,27 @@ def label_colors(colors):
 # also we should 
 np.set_printoptions(suppress=True)
 if __name__ == "__main__":
-    #im = load_test_im("a0.png")
-    #im = cv2.bilateralFilter(im, 25, 25, 25) 
+    #im = cv2.imread("D:\\wgmn\\rsort\\abc\\32.png")
+    #im = load_test_im("32.png")
     #info, *extras = identify(im)
-    labels = load_test_labels()
-    #label = labels["/home/ek/Desktop/wgmn/rsort/ims/a0.png"]
+    #labels = load_test_labels()ed
+    #label = labels["D:\\wgmn\\rsort\\ims5\\32.png"]
+    #label = labels["/home/ek/Desktop/wgmn/rsort/ims5/32.png"]
+
     #grade(info, label)
     #showextras(im, extras)
     #cv2.destroyAllWindows()
 
-    obs = {}
-    for name in labels:
-        label = labels[name]
-        print(bold, gray, label, "\n", endc)
-        print(label['labels'])
-        #imshow("asdasd", visualize_bands(label['colors']), s=0.5, wait=True)
-        for i, color in enumerate(label['colors']):
-            clabel = label['labels'][i]
-            if clabel in obs.keys():
-                obs[clabel].append(color)
-            else:
-                obs[clabel] = [color]
+    #visualize_color_clusters(labels, colorspace='rgb')
+    
+    #im = cv2.imread("D:\\wgmn\\rsort\\abc\\32.png")
+    im = cv2.imread("D:\\wgmn\\rsort\\abc\\0.png")
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2HLS)
 
-    obs = {k:np.array(v) for k, v in obs.items()}
-    avgs = {k:np.mean(v, axis=(0)) for k, v in obs.items()}
-
-    [print(f"{pink}{k}:{v}{endc}") for k, v in obs.items()]
-    [print(f"{gray}{k}:{v}{endc}") for k, v in avgs.items()]
-
-    #fig, ax = plt.scatter()
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.set_xlabel("hue")
-    ax.set_ylabel("light")
-    ax.set_zlabel("sat")
-    for i, col in enumerate(["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray"]):
-        cols = obs[col]
-        cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
-        #cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
-        #cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
-        #ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col, s=10)
-        #ax.scatter(obs[, color=col, s=10)
+    imshow('h', im[:,:,0], s=0.25)
+    imshow('l', im[:,:,1], s=0.25)
+    imshow('s', im[:,:,2], s=0.25)
+    imshow('im', im, s=0.25, wait=True)
 
     plt.show()
 #colorizer

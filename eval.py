@@ -134,7 +134,33 @@ def test_dir_manual_label():
         while not cancontinue:
             cancontinue = label_test_im(imname)
 
+def lightness_tune():
+    from picamera2 import Picamera2
+    pc2 = Picamera2()
+    pc2.start()
+    time.sleep(2)
+    def onclick(event, x, y, flags, params):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            cut += 1
+        if event == cv2.EVENT_RBUTTONDOWN:
+            cut += 1
+        print(f"{bold+lime}cutoff is now: {cut}{endc}")
+    im = pc2.capture_array()
+    imshow('im', im)
+    cv2.setMouseCallback('im', onclick)
+    
+    cut = 25
+    while 1:
+        im = pc2.capture_array()
+        light = lightness(im)
+        threshed = (light<cut).astype(np.uint8)
+        imshow('light', light)
+        imshow('threshed', threshed)
+        imshow('im', im)
+        cv2.waitKey(1)
+
 
 if __name__ == "__main__":
     #labels = load_test_labels()
-    test_dir_manual_label()
+    #test_dir_manual_label()
+    lightness_tune()
