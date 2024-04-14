@@ -5,8 +5,8 @@ pc2 = Picamera2()
 stillConf = pc2.create_still_configuration()
 pc2.start(config=stillConf)
 time.sleep(2)
-save = "//home//ek//Desktop//wgmn//rsort//ims4//"
-c = 0
+save = "//home//ek//Desktop//wgmn//rsort//abc//"
+c = 7
 
 while 1:
     im = pc2.capture_array()
@@ -19,6 +19,6 @@ while 1:
     imshow('im', marked, 0.8)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         cv2.imwrite(f"{save}{c}.png", im)
+        print(f"saved: '{c}.png'")
         c += 1
-        print(f"saved: {c}")
         time.sleep(1)
