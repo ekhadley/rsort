@@ -168,15 +168,20 @@ if __name__ == "__main__":
 
     #visualize_color_clusters(labels, colorspace='rgb')
     
-    im = cv2.imread("ims5/32.png")
-    blank = cv2.imread("abc/0.png")
+    im = cv2.imread("D:\\wgmn\\rsort\\ims5\\32.png")
+    blank = cv2.imread("D:\\wgmn\\rsort\\abc\\0.png")
+
+    h = cv2.cvtColor(blank, cv2.COLOR_RGB2HLS)
+    avg = np.mean(blank, axis=(0,1))
+    diff = ((blank - avg)*[0,0,1]).astype(np.uint8)
+    print(red, avg, endc)
 
 
-    while 1:
-        imshow('blank', blank, s=0.25)
-        imshow('im', im, s=0.25)
-        cv2.waitKey(1)
-        if 0xFF == ord('q'): cv2.destroyAllWindows()
+    imshow('0', h[:,:,0], s=0.25)
+    imshow('1', h[:,:,1], s=0.25)
+    imshow('2', h[:,:,2]+diff[:,:,2], s=0.25)
+    imshow('asd', blank + diff, s=0.25)
+    imshow('blank', blank, s=0.25, wait=True)
 
     #plt.show()
 #colorizer
