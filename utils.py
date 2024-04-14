@@ -170,8 +170,8 @@ def visualize_color_clusters(labels, colorspace='hsl'):
     obs = {}
     for name in labels:
         label = labels[name]
-        print(bold, gray, label, "\n", endc)
-        print(label['labels'])
+        #print(bold, gray, label, "\n", endc)
+        #print(label['labels'])
         #imshow("asdasd", visualize_bands(label['colors']), s=0.5, wait=True)
         for i, color in enumerate(label['colors']):
             clabel = label['labels'][i]
@@ -182,25 +182,20 @@ def visualize_color_clusters(labels, colorspace='hsl'):
 
     obs = {k:np.array(v) for k, v in obs.items()}
     avgs = {k:np.mean(v, axis=(0)) for k, v in obs.items()}
-
-    [print(f"{pink}{k}:{v}{endc}") for k, v in obs.items()]
-    [print(f"{gray}{k}:{v}{endc}") for k, v in avgs.items()]
-
-    #fig, ax = plt.scatter()
+    #[print(f"{pink}{k}:{v}{endc}") for k, v in obs.items()]
+    #[print(f"{gray}{k}:{v}{endc}") for k, v in avgs.items()]
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    match space:
-        case 'rgb': labelaxes(ax, 'red', 'green', 'blue')
-        case 'hls': labelaxes(ax, 'hue', 'light', 'saturation')
-        case 'ycrcb': labelaxes(ax, 'luma', 'red diff', 'blue diff')
-        case 'yuv': labelaxes(ax, 'luma', 'U', 'V')
+    if space == 'rgb': labelaxes(ax, 'red', 'green', 'blue')
+    elif space =='hls': labelaxes(ax, 'hue', 'light', 'saturation')
+    elif space =='ycrcb': labelaxes(ax, 'luma', 'red diff', 'blue diff')
+    elif space =='yuv': labelaxes(ax, 'luma', 'U', 'V')
+    else: assert False, f"unrecognized colorspace: '{colorspace}'"
     for i, col in enumerate(["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray", "green", "orange"]):
         cols = obs[col]
-        match space:
-            case 'hls': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
-            case 'ycrcb': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
-            case 'yuv': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
-            case _: assert space == 'rgb', f"unrecognized colorspace: '{colorspace}'"
+        if space == 'hls': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
+        if space == 'ycrcb': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
+        if space == 'yuv': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
         ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col, s=10)
         #ax.scatter(obs[, color=col, s=10)
 

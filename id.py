@@ -156,10 +156,10 @@ def label_colors(colors):
 # also we should 
 np.set_printoptions(suppress=True)
 if __name__ == "__main__":
-    #im = cv2.imread("D:\\wgmn\\rsort\\abc\\32.png")
+    #im = cv2.imread("abc/32.png")
     #im = load_test_im("32.png")
     #info, *extras = identify(im)
-    #labels = load_test_labels()ed
+    labels = load_test_labels()
     #label = labels["D:\\wgmn\\rsort\\ims5\\32.png"]
     #label = labels["/home/ek/Desktop/wgmn/rsort/ims5/32.png"]
 
@@ -169,8 +169,8 @@ if __name__ == "__main__":
 
     #visualize_color_clusters(labels, colorspace='rgb')
     
-    #im = cv2.imread("D:\\wgmn\\rsort\\abc\\32.png")
-    im = cv2.imread("D:\\wgmn\\rsort\\abc\\0.png")
+    im = cv2.imread("ims5/32.png")
+    im = cv2.imread("abc/0.png")
     im = cv2.cvtColor(im, cv2.COLOR_BGR2HLS)
 
     imshow('h', im[:,:,0], s=0.25)
