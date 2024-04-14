@@ -169,7 +169,7 @@ if __name__ == "__main__":
     #visualize_color_clusters(labels, colorspace='rgb')
     
     im = cv2.imread("ims5/32.png")
-    blank = cv2.imread("abc/10.png")
+    blank = cv2.imread("abc/0.png")
 
 
     while 1:
