@@ -6,7 +6,7 @@ stillConf = pc2.create_still_configuration()
 pc2.start(config=stillConf)
 time.sleep(2)
 save = "//home//ek//Desktop//wgmn//rsort//abc//"
-c = 10
+c = 0
 
 while 1:
     im = pc2.capture_array()
