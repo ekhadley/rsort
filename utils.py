@@ -2,9 +2,11 @@ import cv2, time, os, platform, math, json, random
 import numpy as np
 import colorgram as cg
 from tqdm import trange
-import matplotlib
-import matplotlib.pyplot as plt
 import scipy
+
+import matplotlib
+matplotlib.use("tkagg")
+import matplotlib.pyplot as plt
 
 #gry = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 #ret, binary = cv2.threshold(gry, 160, 255, cv2.THRESH_BINARY_INV)

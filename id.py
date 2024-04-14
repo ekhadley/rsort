@@ -1,6 +1,5 @@
 from utils import *
 
-
 def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50, peakProminence=20, peakWidth=20, peakRelHeight=0.5, bandSampleWidth=10):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     _, labels, centers = cv2.kmeans(strp.reshape(-1, 3).astype(np.float32), numColorClusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
@@ -170,15 +169,16 @@ if __name__ == "__main__":
     #visualize_color_clusters(labels, colorspace='rgb')
     
     im = cv2.imread("ims5/32.png")
-    im = cv2.imread("abc/0.png")
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2HLS)
+    blank = cv2.imread("abc/10.png")
 
-    imshow('h', im[:,:,0], s=0.25)
-    imshow('l', im[:,:,1], s=0.25)
-    imshow('s', im[:,:,2], s=0.25)
-    imshow('im', im, s=0.25, wait=True)
 
-    plt.show()
+    while 1:
+        imshow('blank', blank, s=0.25)
+        imshow('im', im, s=0.25)
+        cv2.waitKey(1)
+        if 0xFF == ord('q'): cv2.destroyAllWindows()
+
+    #plt.show()
 #colorizer
 """
 parameters:
