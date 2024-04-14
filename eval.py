@@ -140,6 +140,7 @@ def lightness_tune():
     pc2.start()
     time.sleep(2)
     def onclick(event, x, y, flags, params):
+        global cut
         if event == cv2.EVENT_LBUTTONDOWN:
             cut += 1
         if event == cv2.EVENT_RBUTTONDOWN:
@@ -152,6 +153,7 @@ def lightness_tune():
     cut = 25
     while 1:
         im = pc2.capture_array()
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         light = lightness(im)
         threshed = (light<cut).astype(np.uint8)
         imshow('light', light)

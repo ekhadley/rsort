@@ -30,7 +30,7 @@ def showextras(im, extras):
     cv2.destroyAllWindows()
 
 def lightness(arr):
-    assert 3 in arr.shape, f"{yellow}array must contain a dimension of length 3 for RGB values. got input shape: {arr.shape}{endc}"
+    assert 3 in arr.shape, f"{yellow}array must contain a dimension of size 3 for RGB values. got input shape: {arr.shape}{endc}"
     cdim = arr.shape.index(3)
     light = np.amax(arr, axis=cdim) - np.amin(arr, axis=cdim)
     return light
