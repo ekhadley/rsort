@@ -139,23 +139,25 @@ def lightness_tune():
     pc2 = Picamera2()
     pc2.start()
     time.sleep(2)
+    global cut
+    cut = 25
     def onclick(event, x, y, flags, params):
         global cut
         if event == cv2.EVENT_LBUTTONDOWN:
             cut += 1
+            print(f"{bold+lime}cutoff is now: {cut}{endc}")
         if event == cv2.EVENT_RBUTTONDOWN:
-            cut += 1
-        print(f"{bold+lime}cutoff is now: {cut}{endc}")
+            cut -= 1
+            print(f"{bold+lime}cutoff is now: {cut}{endc}")
     im = pc2.capture_array()
     imshow('im', im)
     cv2.setMouseCallback('im', onclick)
     
-    cut = 25
     while 1:
         im = pc2.capture_array()
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         light = lightness(im)
-        threshed = (light<cut).astype(np.uint8)
+        threshed = ((light<cut)*255).astype(np.uint8)
         imshow('light', light)
         imshow('threshed', threshed)
         imshow('im', im)

@@ -137,7 +137,7 @@ def imscale(img, s):
     else: h, w, _ = img.shape
     return cv2.resize(img, (round(w*s), round(h*s)), interpolation=cv2.INTER_NEAREST)
 
-def imshow(name, img, s=0.25, wait=False):
+def imshow(name, img, s=1.0, wait=False):
     cv2.imshow(name, imscale(img, s))
     if wait: cv2.waitKey(0)
 
