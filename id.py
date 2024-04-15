@@ -157,7 +157,7 @@ def label_colors(colors):
 # also we should 
 np.set_printoptions(suppress=True)
 if __name__ == "__main__":
-    im = cv2.imread("abc/13.png")
+    im = cv2.imread("abc/12.png")
     #im = load_test_im("32.png")
     info, *extras = identify(im)
     #labels = load_test_labels()
@@ -170,11 +170,11 @@ if __name__ == "__main__":
 
     #visualize_color_clusters(labels, colorspace='rgb')
 
-
     #plt.show()
 #colorizer
 """
 parameters:
+    light color (200, 190, 30, brightness=0.2)
     blur effect:
         - kernel size
         - strength
