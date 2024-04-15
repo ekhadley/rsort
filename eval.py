@@ -157,7 +157,9 @@ def lightness_tune():
         im = pc2.capture_array()
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         light = lightness(im)
-        threshed = ((light<cut)*255).astype(np.uint8)
+        threshed = ((light>cut)*255).astype(np.uint8)
+        #sat = cv2.cvtColor(im, cv2.COLOR_RGB2HSV)[:,:,2]
+        #satthresh = ((sat<cut)*255).astype(np.uint8)
         imshow('light', light)
         imshow('threshed', threshed)
         imshow('im', im)
