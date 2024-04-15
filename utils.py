@@ -2,11 +2,10 @@ import cv2, time, os, platform, math, json, random
 import numpy as np
 import colorgram as cg
 from tqdm import trange
+import matplotlib
+import matplotlib.pyplot as plt
 import scipy
 
-import matplotlib
-matplotlib.use("tkagg")
-import matplotlib.pyplot as plt
 
 #gry = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 #ret, binary = cv2.threshold(gry, 160, 255, cv2.THRESH_BINARY_INV)
@@ -23,16 +22,15 @@ def showextras(im, extras):
     ax.plot(intensity)
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
     #ax.plot(10*np.diff(intensity), color="purple")
-    imshow('cropped', cropped)
     imshow('marked', mark_ends(im, ends), s=0.25)
-    imshow('processed', mark_bands(cropped, bandpos))
+    imshow('processed', mark_bands(cropped, bandpos), s=2.0)
     #imshow('bin', strp)
-    imshow('vis', visualize_bands(bandcolors))
+    imshow('vis', visualize_bands(bandcolors), s=2.0)
     plt.show()
     cv2.destroyAllWindows()
 
 def lightness(arr):
-    assert 3 in arr.shape, f"{yellow}array must contain a dimension of size 3 for RGB values. got input shape: {arr.shape}{endc}"
+    assert 3 in arr.shape, f"{yellow}array must contain a dimension of length 3 for RGB values. got input shape: {arr.shape}{endc}"
     cdim = arr.shape.index(3)
     light = np.amax(arr, axis=cdim) - np.amin(arr, axis=cdim)
     return light
@@ -86,7 +84,7 @@ def mark_bands(strp, bandpos):
         out = cv2.rectangle(out, (band-1, 0), (band+1, strp.shape[0]), (100, 10, 250), -1)
     return out
 
-def get_test_dir(tdname = "ims5"):
+def get_test_dir(tdname = "abc"):
     system = platform.system()
     if system == "Windows": return f"D:\\wgmn\\rsort\\{tdname}"
     elif system == "Linux": return f"/home/ek/Desktop/wgmn/rsort/{tdname}"
@@ -193,8 +191,11 @@ def visualize_color_clusters(labels, colorspace='hsl'):
     elif space =='ycrcb': labelaxes(ax, 'luma', 'red diff', 'blue diff')
     elif space =='yuv': labelaxes(ax, 'luma', 'U', 'V')
     else: assert False, f"unrecognized colorspace: '{colorspace}'"
-    for i, col in enumerate(["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray", "green", "orange"]):
-        cols = obs[col]
+    #for i, col in enumerate(["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray", "green", "orange"]):
+    for col in color_code.keys():
+        if col in obs.keys(): cols = obs[col]
+        else: continue
+
         if space == 'hls': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
         if space == 'ycrcb': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
         if space == 'yuv': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]

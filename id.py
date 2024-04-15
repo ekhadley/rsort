@@ -26,9 +26,11 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50,
 
 def endpoints(im: np.ndarray, lightThresh=55, lowerMass=5000, upperMass=120000):
     light = lightness(im)
-    lightmask = (light<lightThresh).astype(np.uint8)
+    lightmask = (light>lightThresh).astype(np.uint8)
     
     numlabels, labels, values, centroids = cv2.connectedComponentsWithStats(lightmask)
+
+    imshow('lightmask', (lightmask*255).astype(np.uint8), 0.25)
 
     rmask = np.zeros(labels.shape, dtype=np.uint8)
     for i in range(numlabels):
@@ -155,33 +157,19 @@ def label_colors(colors):
 # also we should 
 np.set_printoptions(suppress=True)
 if __name__ == "__main__":
-    #im = cv2.imread("abc/32.png")
+    im = cv2.imread("abc/13.png")
     #im = load_test_im("32.png")
-    #info, *extras = identify(im)
-    labels = load_test_labels()
+    info, *extras = identify(im)
+    #labels = load_test_labels()
     #label = labels["D:\\wgmn\\rsort\\ims5\\32.png"]
     #label = labels["/home/ek/Desktop/wgmn/rsort/ims5/32.png"]
 
     #grade(info, label)
-    #showextras(im, extras)
-    #cv2.destroyAllWindows()
+    showextras(im, extras)
+    cv2.destroyAllWindows()
 
     #visualize_color_clusters(labels, colorspace='rgb')
-    
-    im = cv2.imread("D:\\wgmn\\rsort\\ims5\\32.png")
-    blank = cv2.imread("D:\\wgmn\\rsort\\abc\\0.png")
 
-    h = cv2.cvtColor(blank, cv2.COLOR_RGB2HLS)
-    avg = np.mean(blank, axis=(0,1))
-    diff = ((blank - avg)*[0,0,1]).astype(np.uint8)
-    print(red, avg, endc)
-
-
-    imshow('0', h[:,:,0], s=0.25)
-    imshow('1', h[:,:,1], s=0.25)
-    imshow('2', h[:,:,2]+diff[:,:,2], s=0.25)
-    imshow('asd', blank + diff, s=0.25)
-    imshow('blank', blank, s=0.25, wait=True)
 
     #plt.show()
 #colorizer
