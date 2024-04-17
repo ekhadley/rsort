@@ -1,10 +1,41 @@
 import cv2, time, os, platform, math, json, random
 import numpy as np
-import colorgram as cg
+#import colorgram as cg
 from tqdm import trange
 import matplotlib
 import matplotlib.pyplot as plt
 import scipy
+
+color_code = {"black": 0,
+              "brown": 1,
+              "red": 2,
+              "orange": 3,
+              "yellow": 4,
+              "green": 5,
+              "blue": 6,
+              "purple": 7,
+              "gray": 8,
+              "white": 9,
+              "gold": -1,
+              "silver": -2}
+tolerance_color_code = {"gold": 0.05, "silver": 0.1}
+
+purple = '\033[95m'
+blue = '\033[94m'
+cyan = '\033[96m'
+lime = '\033[92m'
+yellow = '\033[93m'
+red = "\033[38;5;196m"
+pink = "\033[38;5;206m"
+orange = "\033[38;5;202m"
+green = "\033[38;5;34m"
+gray = "\033[38;5;8m"
+
+bold = '\033[1m'
+underline = '\033[4m'
+endc = '\033[0m'
+allcolors = [purple, blue, cyan, lime, yellow, red, pink, orange, green, gray]
+
 
 
 #gry = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -84,16 +115,15 @@ def mark_bands(strp, bandpos):
         out = cv2.rectangle(out, (band-1, 0), (band+1, strp.shape[0]), (100, 10, 250), -1)
     return out
 
-def get_test_dir(tdname = "abc"):
+def get_test_dir(tdname = "ims2"):
     system = platform.system()
     if system == "Windows": return f"D:\\wgmn\\rsort\\{tdname}"
     elif system == "Linux": return f"/home/ek/Desktop/wgmn/rsort/{tdname}"
     else: raise FileNotFoundError(f"{bold+red}unknown system: {system}. failed to load image{endc}")
 
-def load_test_im(name, blur=True):
+def load_test_im(name):
     tdir = get_test_dir()
     path = os.path.join(tdir, name)
-    #if blur: return cv2.bilateralFilter(cv2.imread(path), 25, 25, 25)
     return cv2.imread(path)
 
 def save_test_labels(labels):
@@ -158,6 +188,7 @@ def col_cluster(strp_: np.ndarray, K=15):
 
 def resistor_value(_colors, reverse=0):
     colors = list(reversed(_colors)) if reverse else _colors
+    if "none" in colors and colors[-1] != "none": assert False, f"{red}missing color label in non-tolerance position{endc}"
     val = 0
     for i in range(len(colors)-2):
         bandval = color_code[colors[i]]
@@ -165,27 +196,28 @@ def resistor_value(_colors, reverse=0):
     val *= 10**color_code[colors[-2]]
     return val
 
-def visualize_color_clusters(labels, colorspace='hsl'):
-    space = colorspace.lower()
-    obs = {}
+def color_data_from_labels(labels, keepnone=False, t=None):
+    data = {}
+    clabel = {k:[] for k in data.keys()}
     for name in labels:
         label = labels[name]
-        #print(bold, gray, label, "\n", endc)
-        #print(label['labels'])
-        #imshow("asdasd", visualize_bands(label['colors']), s=0.5, wait=True)
         for i, color in enumerate(label['colors']):
             clabel = label['labels'][i]
-            if clabel in obs.keys():
-                obs[clabel].append(color)
-            else:
-                obs[clabel] = [color]
+            if keepnone or clabel != "none":
+                if clabel in data.keys():
+                    data[clabel].append(color)
+                else:
+                    data[clabel] = [color]
+    return {k:np.array(v) for k, v in data.items()}
 
-    obs = {k:np.array(v) for k, v in obs.items()}
-    avgs = {k:np.mean(v, axis=(0)) for k, v in obs.items()}
-    #[print(f"{pink}{k}:{v}{endc}") for k, v in obs.items()]
-    #[print(f"{gray}{k}:{v}{endc}") for k, v in avgs.items()]
+def visualize_color_clusters(labels, colorspace='hsl', t=None):
+    space = colorspace.lower()
+
+    obs = color_data_from_labels(labels)
+
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
+    #ax.set_xlim((0, 255));ax.set_ylim((0, 255));ax.set_zlim((0, 255))
     if space == 'rgb': labelaxes(ax, 'red', 'green', 'blue')
     elif space =='hls': labelaxes(ax, 'hue', 'light', 'saturation')
     elif space =='ycrcb': labelaxes(ax, 'luma', 'red diff', 'blue diff')
@@ -195,49 +227,18 @@ def visualize_color_clusters(labels, colorspace='hsl'):
     for col in color_code.keys():
         if col in obs.keys(): cols = obs[col]
         else: continue
-
+        if t is not None: cols = cols.copy() @ t
         if space == 'hls': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
         if space == 'ycrcb': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
         if space == 'yuv': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
         ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col, s=10)
         #ax.scatter(obs[, color=col, s=10)
 
-    plt.show()
+    #plt.show()
 
 def labelaxes(ax, *args):
     assert 1 < len(args) < 4, f'2 or 3 labels are required. got {len(args)}: {args}'
     ax.set_xlabel(args[0])
     ax.set_ylabel(args[1])
     if len(args) == 3: ax.set_zlabel(args[2])
-
-color_code = {"black": 0,
-              "brown": 1,
-              "red": 2,
-              "orange": 3,
-              "yellow": 4,
-              "green": 5,
-              "blue": 6,
-              "purple": 7,
-              "gray": 8,
-              "white": 9,
-              "gold": -1,
-              "silver": -2}
-tolerance_color_code = {"gold": 0.05, "silver": 0.1}
-
-purple = '\033[95m'
-blue = '\033[94m'
-cyan = '\033[96m'
-lime = '\033[92m'
-yellow = '\033[93m'
-red = "\033[38;5;196m"
-pink = "\033[38;5;206m"
-orange = "\033[38;5;202m"
-green = "\033[38;5;34m"
-gray = "\033[38;5;8m"
-
-bold = '\033[1m'
-underline = '\033[4m'
-endc = '\033[0m'
-allcolors = [purple, blue, cyan, lime, yellow, red, pink, orange, green, gray]
-
 

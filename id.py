@@ -1,15 +1,18 @@
 from utils import *
+np.set_printoptions(suppress=True)
 
-def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50, peakProminence=20, peakWidth=20, peakRelHeight=0.5, bandSampleWidth=10):
+def band_colors(strp: np.ndarray, numColorClusters=4, peakHeight=2, peakDist=55, peakProminence=20, peakWidth=20, peakRelHeight=0.5, bandSampleWidth=10):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     _, labels, centers = cv2.kmeans(strp.reshape(-1, 3).astype(np.float32), numColorClusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     _, counts = np.unique(labels, return_counts=True)
     basecol = centers[np.argmax(counts)]
 
+    imshow('asdfasdf', visualize_bands(centers))
+
     base = strp - basecol
     avgs = np.mean(base, axis=0)
-    #ints = np.mean(np.sqrt(np.sum(np.square(base), axis=2)), axis=0)
-    ints = np.mean(lightness(base), axis=0)
+    ints = np.mean(np.sqrt(np.sum(np.square(base), axis=2)), axis=0)
+    #ints = np.mean(lightness(base), axis=0)
 
     bandpos, _ = scipy.signal.find_peaks(ints,
                                     height=peakHeight,
@@ -24,13 +27,13 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=50,
     bandcolors = [np.mean(strp[:,band-bandSampleWidth//2:band+bandSampleWidth//2], axis=(0,1)) for band in bandpos]
     return base, avgs, ints, bandpos, np.rint(bandcolors)
 
-def endpoints(im: np.ndarray, lightThresh=55, lowerMass=5000, upperMass=120000):
+def endpoints(im: np.ndarray, lightThresh=40, lowerMass=5000, upperMass=120000):
     light = lightness(im)
     lightmask = (light>lightThresh).astype(np.uint8)
     
     numlabels, labels, values, centroids = cv2.connectedComponentsWithStats(lightmask)
 
-    imshow('lightmask', (lightmask*255).astype(np.uint8), 0.25)
+    #imshow('lightmask', (lightmask*255).astype(np.uint8), 0.25)
 
     rmask = np.zeros(labels.shape, dtype=np.uint8)
     for i in range(numlabels):
@@ -52,13 +55,13 @@ def endpoints(im: np.ndarray, lightThresh=55, lowerMass=5000, upperMass=120000):
 
     imm = cv2.drawContours(im.copy(), contours, -1, (250,0,250), 5)
     imm = cv2.drawContours(imm, [hull], -1, (0,250,250), 5)
-    imshow("immm", imm, s=0.25)
+    #imshow("immmmmmmmmmmmmmm", imm, s=0.25)
     return np.array([end1, end2])
 
 def identify(im):
     h, w, _ = im.shape
-    blur = cv2.bilateralFilter(im, 30, 75, 75) 
-    ends = endpoints(im)
+    blur = cv2.bilateralFilter(im, 10, 75, 75) 
+    ends = endpoints(blur)
     cropped = isolate(im, ends)
     strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
 
@@ -92,7 +95,6 @@ def grade(auto, label):
     print()
 
     abands, lbands = auto['bands'], label['bands']
-    #lbands = list(reversed(1-lbands) if label['reversed'] else lbands
     lbands = list(reversed(1-lbands))
     stretch = True
     if stretch:
@@ -112,66 +114,51 @@ def grade(auto, label):
     print(f"{bold+blue} color score: {colorscore}{endc}")
     print()
 
-def label_colors(colors):
-    c1 = {"black": [71, 62, 53],
-          "brown": [70, 64, 77],
-          "red":   [81, 65, 115],
-          "orange":[],
-          "yellow":[66, 124, 103],
-          "green": [],
-          "blue":  [118, 71, 52],
-          "purple":[109, 69, 58],
-          "gray":  [96, 88, 100],
-          "white": [],
-          "gold":  [110, 116, 124],
-          "silver":[]}
-    labels = []
-    s = {}
-    for color in colors:
-        blab, dist = "", 1e9
-        for lab, bgr in c1.items():
-            if len(bgr) > 0:
-                ndist = np.linalg.norm(np.array(bgr)-np.array(color))
-                s[lab] = ndist
-                if ndist < dist: blab, dist = lab, ndist
-        print(bold, red, color)
-        print(orange, s)
-        print(green, blab, endc)
-        print()
-        s = {}
-        labels.append(blab)
-    return labels
+def survey_test_dir():
+    tdir = get_test_dir()
+    imnames = [e for e in os.listdir(tdir) if e.endswith(("png", "jpg", "jpeg"))]
+    for i, imname in enumerate(imnames):
+        print(f"{bold+gray+underline}checking {imname}{endc}")
+        im = load_test_im(imname)
+        info, *extras = identify(im)
+        showextras(im, extras)
 
-# todo: orientation detection, color labeling
-# unless... :flushed:
-# we don't **technically** need to know the value of a resistor to sort them.
-# we just need to put  them into bins of their own kind.
-# orientation detection and color labelling are only actually necessary for 
-# determining ohm value, not for differnetiating two resistors
-# except aactualyyyyyyyy a resistor can have the same colors in opposite
-# order, so we maybe can't just look for the orientation of minimal distance
-# cause could give false positive? idk.
-# so basically if a resistor's colors match NONE of the previously seen ones,
-# we don't have to check orientation to declare it as new. If it has the same
-# colors (forward or back) as any other we have to check orientation.
-# also we should 
-np.set_printoptions(suppress=True)
+def label_color(val, data, t=None):
+    data = {k:np.array(v)@t for k, v in data.items()}
+    dists = {}
+    for clabel, cvalues in data.items():
+        dists[clabel] = np.linalg.norm(val@t - cvalues, axis=1, ord=2)
+    avgs = {k:np.mean(v) for k, v in dists.items()}
+    labelidx = np.argmin(list(avgs.values()))
+    return list(avgs.keys())[labelidx], avgs
+
+def grade_metric(data, metric, t=None):
+    allscores = []
+    colorscores = {k:[] for k in data.keys()}
+    for clabel, cvalues in data.items():
+        for cval in cvalues:
+            label, adists = metric(cval, data, t=t)
+            allscores.append(label == clabel)
+            colorscores[clabel].append(label == clabel)
+    avgallscores = np.mean(allscores)
+    avgcolorscores = {k: round(np.mean(v), 3) for k, v in colorscores.items()}
+    coloravg = np.mean(list(avgcolorscores.values()))
+    return avgallscores, coloravg, avgcolorscores
+
+best = np.array([[-0.91104206, -0.76727, 0.42730725],[ 0.70066949,  0.76806536, -0.81296646],[ 0.35724914, -0.30499501, 0.16356933]])
 if __name__ == "__main__":
-    im = cv2.imread("abc/12.png")
-    #im = load_test_im("32.png")
+    #survey_test_dir()
+    labels = load_test_labels()
+    im = load_test_im("1.png")
     info, *extras = identify(im)
-    #labels = load_test_labels()
-    #label = labels["D:\\wgmn\\rsort\\ims5\\32.png"]
-    #label = labels["/home/ek/Desktop/wgmn/rsort/ims5/32.png"]
-
-    #grade(info, label)
     showextras(im, extras)
-    cv2.destroyAllWindows()
+    
+    #ascore, cscores, acscores = grade_metric(data, metric=label_color, t=best)
 
+    #labels = load_test_labels()
     #visualize_color_clusters(labels, colorspace='rgb')
-
+    #visualize_color_clusters(labels, colorspace='rgb', t=best)
     #plt.show()
-#colorizer
 """
 parameters:
     light color (200, 190, 30, brightness=0.2)

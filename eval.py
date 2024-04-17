@@ -101,7 +101,7 @@ def label_test_im(imname, _IS=0.3, _SS=2.0):
             
             while len(data["labels"]) < len(data["colors"]):
                 label = input(f"Enter label for color {len(data['labels'])}: ")
-                if label in color_code.keys(): data["labels"].append(label)
+                if label in color_code.keys() or label == "none": data["labels"].append(label)
                 else: print(f"Invalid color code: {label}. Try again.")
 
             label = input(f"Is the order of the colors reversed? ['y', 'n']: ")
@@ -127,12 +127,16 @@ def label_test_im(imname, _IS=0.3, _SS=2.0):
 
 def test_dir_manual_label():
     tdir = get_test_dir()
+    existing_labels = load_test_labels()
     imnames = [e for e in os.listdir(tdir) if e.endswith(("png", "jpg", "jpeg"))]
-    for name in imnames:
+    for i, name in enumerate(imnames):
         imname = os.path.join(tdir, name)
+        print(f"{bold+gray+underline}bands were labelled{existing_labels[imname]['labels']}{endc}")
+        print(f"{bold+gray+underline}{i+1}/{len(imnames)} images labelled{endc}")
         cancontinue = label_test_im(imname)
         while not cancontinue:
             cancontinue = label_test_im(imname)
+
 
 def lightness_tune():
     from picamera2 import Picamera2
@@ -168,5 +172,5 @@ def lightness_tune():
 
 if __name__ == "__main__":
     #labels = load_test_labels()
-    #test_dir_manual_label()
-    lightness_tune()
+    test_dir_manual_label()
+    #lightness_tune()
