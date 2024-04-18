@@ -47,8 +47,6 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=65,
                                     width=peakWidth,
                                     rel_height=relHeight,
                                     plateau_size=None)
-    print(bandpos)
-    print(info)
 
     bandcolors = [np.mean(strp[:,band-bandSampleWidth//2:band+bandSampleWidth//2], axis=(0,1)) for band in bandpos]
     return base, avgs, ints, bandpos, np.rint(bandcolors)
@@ -84,16 +82,21 @@ def endpoints(im: np.ndarray, lightThresh=40, lowerMass=5000, upperMass=120000):
     #imshow('ellipse', imm, s=0.25, wait=True)
     return np.array([end1, end2])
 
-def identify(im):
+def identify(im, log=False):
     h, w, _ = im.shape
     blur = cv2.bilateralFilter(im, 3, 55, 55)
     ends = endpoints(blur)
+    if log: print(f"{gray}located endpoint{endc}")
     cropped = isolate(blur, ends)
+    if log: print(f"{gray}isolated body{endc}")
     strp, avgs, intensity, bandpos, bandcolors = band_colors(cropped)
+    if log: print(f"{gray}located band positions{endc}")
     colorlabels = [lookup_label(color) for color in bandcolors]
+    if log: print(f"{gray}labeled band colors{endc}")
     scaled_bandpos = bandpos/strp.shape[1]
     isreversed = is_reversed(scaled_bandpos, colorlabels)
     value = resistor_value(colorlabels, reverse=isreversed)
+    if log: print(f"{gray}calculated value{endc}")
 
     scaled_ends = ends.astype(np.float32)
     scaled_ends[:,0] /= w
@@ -127,8 +130,13 @@ def is_reversed(bandpos, labels):
 
 def lookup_label(*args, **kwargs):
     val = args[0]
-    idx = lookup[*np.rint(val).astype(np.uint8)]
-    return reverse_color_code[idx]
+    #idx = lookup[*np.rint(val).astype(np.uint8)]
+    #return reverse_color_code[idx]
+    
+    v = np.rint(val).astype(np.uint8)
+    r, g, b = v[0], v[1], v[2]
+    idx = lookup[r, g, b]
+    return reverse_color_code[int(idx)]
 
 best = np.load('transform.npy')
 lookup = np.load("lookup.npy")

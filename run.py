@@ -1,10 +1,8 @@
 from utils import *
-#from identify import *
+from identify import *
 import RPi.GPIO as gpio
 from gpiozero import Servo
 from picamera2 import Picamera2
-import board
-import import neopixel as neo
 
 class binController:
     def __init__(self, pin, num_bins, num_accessible, home=0.75, inc=0.44):
@@ -28,7 +26,6 @@ class binController:
         self.move(self.bins_home - n*self.bins_inc)
     def drop(self, val):
         if val in self.binvalues:
-            print(f"{val} is stored in bin {self.binvalues.index(val)}")
             door_up()
             self.move_to_bin(self.binvalues.index(val))
             time.sleep(0.5)
@@ -39,8 +36,6 @@ class binController:
             self.count += 1
             return True
         elif len(self.binvalues) < self.nacc:
-            print(f"{val} is new. storing in bin {len(self.binvalues)}")
-
             door_up()
             self.move_to_bin(len(self.binvalues))
             time.sleep(0.25)
@@ -52,23 +47,28 @@ class binController:
             self.count += 1
             return True
         else:
-            print(f"cant store {val}. bins are full ({self.nacc=}, {len(self.binvalues)=})")
-            print(f"{bold+yellow} error: all available bins are occupied. cannot accomodate resistor of value {val}{endc}")
             return False
+    def candrop(self, val):
+        if val in self.binvalues: return True
+        elif len(self.binvalues) < self.nacc: return True
+        else: return False
 
-door_home_position, door_down_position = -0.7, 0.65
-light_color = (200, 190, 30)
+door_home_position, door_down_position = -0.55, 0.65
 def door_up(home=door_home_position): door.value = home
 def door_down(down=door_down_position): door.value = down
+def light_on():
+    os.system('sudo python3 ~/Desktop/wgmn/rsort/lights.py 1')
+def light_off():
+    os.system('sudo python3 ~/Desktop/wgmn/rsort/lights.py 0')
 
+state = 'looking'
 if __name__ == "__main__":
     pc2 = Picamera2()
     stillConf = pc2.create_still_configuration()
     pc2.start(config=stillConf)
 
-    light = neo.NeoPixel(board.D18, 16, brightness=0.2)
-    light.fill(light_color)
-    
+    light_on()
+
     door = Servo(19, initial_value = door_home_position)
     bins = binController(26, 8, 5)
     time.sleep(2)
@@ -77,8 +77,40 @@ if __name__ == "__main__":
     while 1:
         im = pc2.capture_array()
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        imshow('image', im, s=0.25)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        imshow('im', im, s=0.3)
+        
+        wait = cv2.waitKey(1) & 0xFF
+        if wait == ord('e'):
+            valid = False
+            try:
+                info, *extras = identify(im, log=True)
+                print_data(info)
+                #showextras(im, extras)
+                valid = valid_info(info)
+            except Exception as e:
+                print(f"{red+bold}identification failed with exception: {e}. discarding results.{endc}")
             cv2.destroyAllWindows()
+            if valid and state != 'full':
+                if bins.candrop(info['value']):
+                    state = 'pending'
+                    print(f"{bold+green+underline}info extracted successfully. press 'd' to sort the resistor.{endc}")
+                else:
+                    state = 'full'
+                    print(f"{bold+yellow+underline}info extracted but all bins are occuppied. cannot sort.{endc}")
+            else: print("data was invalid")
+
+        if state == 'pending':
+            imshow('processed', mark_bands(extras[0], extras[-2]), s=2.0)
+            if wait == ord('d'):
+                bins.drop(info['value'])
+                print(f"{bold+lime}{info['value']}ohm resistor stored in bin {bins.binvalues.index(info['value'])}{endc}\n\n")
+                state = 'looking'
+            if wait == ord('r'):
+                state = 'looking'
+            
+        if wait == ord('q'):
+            cv2.destroyAllWindows()
+            light_off()
             exit()
+
+

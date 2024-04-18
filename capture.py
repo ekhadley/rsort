@@ -5,7 +5,7 @@ pc2 = Picamera2()
 stillConf = pc2.create_still_configuration()
 pc2.start(config=stillConf)
 time.sleep(2)
-save = "//home//ek//Desktop//wgmn//rsort//ims2//"
+save = "//home//ek//Desktop//wgmn//rsort//ims17//"
 c = 46
 
 while 1:

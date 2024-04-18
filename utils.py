@@ -52,13 +52,13 @@ def showextras(im, extras):
     ax.plot(avgs)
     ax.plot(intensity)
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
-    #ax.plot(7*np.diff(intensity), color="purple")
     imshow('marked', mark_ends(im, ends), s=0.25)
     imshow('processed', mark_bands(cropped, bandpos), s=2.0)
-    #imshow('bin', strp)
+    imshow('bin', strp)
     imshow('vis', visualize_bands(bandcolors), s=2.0)
     plt.show()
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
+
 
 def lightness(arr):
     assert 3 in arr.shape, f"{yellow}array must contain a dimension of length 3 for RGB values. got input shape: {arr.shape}{endc}"
@@ -294,3 +294,8 @@ def print_data(data):
     print(f"{blue}labels: {data['labels']}{endc}")
     print(f"{lime}reversed: {data['reversed']}{endc}")
     print(f"{cyan}value: {data['value']}{endc}")
+
+def valid_info(info):
+    if len(info['labels']) < 3 or len(info['labels']) > 5: return False
+    if info['value'] < 1 or info['value'] > 1e8: return False
+    return True
