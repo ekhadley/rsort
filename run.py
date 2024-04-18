@@ -1,10 +1,11 @@
 from utils import *
-from identify import *
+#from identify import *
 import RPi.GPIO as gpio
 from gpiozero import Servo
+from picamera2 import Picamera2
 
 class binController:
-    def __init__(self, num_bins, num_accessible, pin, home=0.8, inc=0.44):
+    def __init__(self, pin, num_bins, num_accessible, home=0.75, inc=0.44):
         self.servo = Servo(pin, initial_value=home, min_pulse_width=0.00038, max_pulse_width=0.0024)
         self.pin = pin
         self.bins_home = home
@@ -14,44 +15,64 @@ class binController:
         self.nacc = num_accessible
 
         self.binvalues = []
-        self.nocc = 0
         self.count = 0
 
-    def move(self, inc):
-        self.servo.value = inc
+    def move(self, a):
+        t = max(-1, min(a, 1))
+        self.servo.value = t
     def reset(self):
         self.servo.value = self.bins_home
-    def move_to(self, n):
-        self.servo.value = self.bins_home - n*self.bins_inc
+    def move_to_bin(self, n):
+        self.move(self.bins_home - n*self.bins_inc)
     def drop(self, val):
-        if val in self.labels:
-            self.move_to(self.labels.index(val))
+        if val in self.binvalues:
+            print(f"{val} is stored in bin {self.binvalues.index(val)}")
+            door_up()
+            self.move_to_bin(self.binvalues.index(val))
+            time.sleep(0.5)
+            door_down()
+            time.sleep(0.25)
+            door_up()
+
             self.count += 1
             return True
-        elif self.nocc < self.nacc:
-            self.labels.append(val)
-            self.move_to(self.nocc)
+        elif len(self.binvalues) < self.nacc:
+            print(f"{val} is new. storing in bin {len(self.binvalues)}")
+
+            door_up()
+            self.move_to_bin(len(self.binvalues))
+            time.sleep(0.25)
+            door_down()
+            time.sleep(0.25)
+            door_up()
+            
+            self.binvalues.append(val)
             self.count += 1
             return True
         else:
+            print(f"cant store {val}. bins are full ({self.nacc=}, {len(self.binvalues)=})")
             print(f"{bold+yellow} error: all available bins are occupied. cannot accomodate resistor of value {val}{endc}")
             return False
 
-door_home_position, door_down_position = -0.7, 0.75
-def door_up(home=-door_home_position): door.value = home
+door_home_position, door_down_position = -0.7, 0.65
+def door_up(home=door_home_position): door.value = home
 def door_down(down=door_down_position): door.value = down
 
 if __name__ == "__main__":
-    door = Servo(19, initial_value=door_home_position)
-    bins = binController(26, 8, 5, initial_value=-1, inc=0.44)
+    pc2 = Picamera2()
+    stillConf = pc2.create_still_configuration()
+    pc2.start(config=stillConf)
+    
+    door = Servo(19, initial_value = door_home_position)
+    bins = binController(26, 8, 5)
+    time.sleep(2)
+    
 
     while 1:
-        bins.move_to(0)
-        door_down()
-        time.sleep(1)
-        door_up()
-        time.sleep(1)
-        bins.move_to(3)
-        door_down()
-        time.sleep(1)
+        im = pc2.capture_array()
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        imshow('image', im, s=0.25)
 
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.destroyAllWindows()
+            exit()
