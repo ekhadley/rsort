@@ -1,6 +1,6 @@
 from utils import *
 from rsort.identify import *
-import RPi.GPEIO as gpio
+import RPi.GPIO as gpio
 from gpiozero import Servo
 
 class binController:
