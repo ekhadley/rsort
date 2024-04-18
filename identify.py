@@ -25,7 +25,7 @@ def survey_test_dir():
         print(f"{bold+underline+pink}true value: {labels[os.path.join(tdir, imname)]['value']}{endc}\n")
         showextras(im, extras)
 
-def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=65, peakProminence=20, peakWidth=23, relHeight=0.5, bandSampleWidth=10):
+def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=65, peakProminence=20, peakWidth=19, relHeight=0.4, bandSampleWidth=10):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     _, labels, centers = cv2.kmeans(strp.reshape(-1, 3).astype(np.float32), numColorClusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     _, counts = np.unique(labels, return_counts=True)
@@ -35,7 +35,8 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=65,
     #imshow('base', cv2.cvtColor(np.abs(base), cv2.COLOR_RGB2GRAY)*.02, s=2.0, wait=True)
     avgs = np.mean(base, axis=0)
     ints = np.mean(np.sqrt(np.sum(np.square(base), axis=2)), axis=0)
-    ints = np.convolve(ints, np.ones(peakWidth//2), mode='valid')/(peakWidth//2)
+    ints = np.convolve(ints, np.ones(peakWidth), mode='valid')/(peakWidth)
+    
 
     bandpos, info = scipy.signal.find_peaks(ints,
                                     height=peakHeight,
@@ -46,8 +47,8 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=65,
                                     width=peakWidth,
                                     rel_height=relHeight,
                                     plateau_size=None)
-    #print(bandpos)
-    #print(info)
+    print(bandpos)
+    print(info)
 
     bandcolors = [np.mean(strp[:,band-bandSampleWidth//2:band+bandSampleWidth//2], axis=(0,1)) for band in bandpos]
     return base, avgs, ints, bandpos, np.rint(bandcolors)
@@ -132,17 +133,17 @@ def lookup_label(*args, **kwargs):
 best = np.load('transform.npy')
 lookup = np.load("lookup.npy")
 if __name__ == "__main__":
-    im = load_test_im("5.png")
-    info, *extras = identify(im)
-    print_data(info)
-    showextras(im, extras)
+    #im = load_test_im("5.png")
+    #info, *extras = identify(im)
+    #print_data(info)
+    #showextras(im, extras)
 
-    #score = grade_identification(identify, inspect=True)
-    #print(f"{bold+purple}{score=:.4f}{endc}")
+    score = grade_identification(identify, inspect=False)
+    print(f"{bold+purple}{score=:.4f}{endc}")
 
     #survey_test_dir()
 
-    labels = load_test_labels()
-    visualize_color_clusters(labels, colorspace='rgb', t=None)
-    visualize_color_clusters(labels, colorspace='rgb', t=best)
-    plt.show()
+    #labels = load_test_labels()
+    #visualize_color_clusters(labels, colorspace='rgb', t=None)
+    #visualize_color_clusters(labels, colorspace='rgb', t=best)
+    #plt.show()
