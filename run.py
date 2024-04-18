@@ -3,6 +3,8 @@ from utils import *
 import RPi.GPIO as gpio
 from gpiozero import Servo
 from picamera2 import Picamera2
+import board
+import import neopixel as neo
 
 class binController:
     def __init__(self, pin, num_bins, num_accessible, home=0.75, inc=0.44):
@@ -55,6 +57,7 @@ class binController:
             return False
 
 door_home_position, door_down_position = -0.7, 0.65
+light_color = (200, 190, 30)
 def door_up(home=door_home_position): door.value = home
 def door_down(down=door_down_position): door.value = down
 
@@ -62,6 +65,9 @@ if __name__ == "__main__":
     pc2 = Picamera2()
     stillConf = pc2.create_still_configuration()
     pc2.start(config=stillConf)
+
+    light = neo.NeoPixel(board.D18, 16, brightness=0.2)
+    light.fill(light_color)
     
     door = Servo(19, initial_value = door_home_position)
     bins = binController(26, 8, 5)
