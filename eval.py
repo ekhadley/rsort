@@ -1,15 +1,5 @@
 from utils import *
 
-
-def print_data(data):
-    print(f"{yellow}name: {data['name']}")
-    print(f"{orange}ends: {data['ends']}")
-    print(f"{pink}bands: {data['bands']}")
-    print(f"{green}colors: {data['colors']}")
-    print(f"{blue}labels: {data['labels']}{endc}")
-    print(f"{lime}reversed: {data['reversed']}{endc}")
-    print(f"{cyan}value: {data['value']}{endc}")
-
 def pixels(pt, im):
     h, w, _ = im.shape
     return (round(pt[0]*w), round(pt[1]*h))

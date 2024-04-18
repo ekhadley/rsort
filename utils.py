@@ -1,6 +1,7 @@
 import cv2, time, os, platform, math, json, random
 import numpy as np
 #import colorgram as cg
+import tqdm
 from tqdm import trange
 import matplotlib
 import matplotlib.pyplot as plt
@@ -18,6 +19,7 @@ color_code = {"black": 0,
               "white": 9,
               "gold": -1,
               "silver": -2}
+reverse_color_code = {v:k for k, v in color_code.items()}
 tolerance_color_code = {"gold": 0.05, "silver": 0.1}
 
 purple = '\033[95m'
@@ -36,8 +38,6 @@ underline = '\033[4m'
 endc = '\033[0m'
 allcolors = [purple, blue, cyan, lime, yellow, red, pink, orange, green, gray]
 
-
-
 #gry = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 #ret, binary = cv2.threshold(gry, 160, 255, cv2.THRESH_BINARY_INV)
 #center = [round(np.average(indices)) for indices in np.where(binary >= 255)] 
@@ -52,7 +52,7 @@ def showextras(im, extras):
     ax.plot(avgs)
     ax.plot(intensity)
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
-    #ax.plot(10*np.diff(intensity), color="purple")
+    #ax.plot(7*np.diff(intensity), color="purple")
     imshow('marked', mark_ends(im, ends), s=0.25)
     imshow('processed', mark_bands(cropped, bandpos), s=2.0)
     #imshow('bin', strp)
@@ -80,18 +80,6 @@ def mark_ends(im: np.ndarray, ends):
 def mark_end(im: np.ndarray, end):
     return cv2.circle(im.copy(), end, 30, (0, 0, 255), 10)
 
-def isolate(im: np.ndarray, ends):
-    end1, end2 = ends
-    if end1[0] > end2[0]: end1, end2 = end2, end1
-    x1, y1, x2, y2 = *end1, *end2
-    dist = int(math.sqrt((x1-x2)**2 +  (y1-y2)**2))
-    a = math.degrees(math.atan2(y1-y2, x2-x1))
-    if a < 0: a += 360
-    out = np.pad(im, [(0,dist), (0,dist), (0, 0)], mode='constant')
-    out = rotate_image(out, -a, center=(x1, y1))
-    out = out[y1-30:y1+30, x1+70:x1+dist-70]
-    return out # the slice used for color gradient examination
-
 def rotate_image(image, degrees, center=None):
     if center is None:
         h, w, _ = image.shape
@@ -112,7 +100,7 @@ def visualize_bands(colors, scale=1.0):
 def mark_bands(strp, bandpos):
     out = np.array(strp, copy=True)
     for band in bandpos:
-        out = cv2.rectangle(out, (band-1, 0), (band+1, strp.shape[0]), (100, 10, 250), -1)
+        out = cv2.rectangle(out, (band-1, 0), (band+1, strp.shape[0]), (200, 200, 250), -1)
     return out
 
 def get_test_dir(tdname = "ims2"):
@@ -190,10 +178,11 @@ def resistor_value(_colors, reverse=0):
     colors = list(reversed(_colors)) if reverse else _colors
     if "none" in colors and colors[-1] != "none": assert False, f"{red}missing color label in non-tolerance position{endc}"
     val = 0
-    for i in range(len(colors)-2):
-        bandval = color_code[colors[i]]
+    for color in colors[:-2 if len(colors) > 3 else 2]:
+        bandval = color_code[color]
         val = val*10 + bandval
-    val *= 10**color_code[colors[-2]]
+    if len(colors) >= 4: val *= 10**color_code[colors[-2]]
+    else: val *= 10**color_code[colors[-1]]
     return val
 
 def color_data_from_labels(labels, keepnone=False, t=None):
@@ -210,10 +199,10 @@ def color_data_from_labels(labels, keepnone=False, t=None):
                     data[clabel] = [color]
     return {k:np.array(v) for k, v in data.items()}
 
-def visualize_color_clusters(labels, colorspace='hsl', t=None):
+def visualize_color_clusters(labels, colorspace='hsl', t=None, keepnone=False):
     space = colorspace.lower()
 
-    obs = color_data_from_labels(labels)
+    obs = color_data_from_labels(labels, keepnone=keepnone)
 
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
@@ -223,16 +212,16 @@ def visualize_color_clusters(labels, colorspace='hsl', t=None):
     elif space =='ycrcb': labelaxes(ax, 'luma', 'red diff', 'blue diff')
     elif space =='yuv': labelaxes(ax, 'luma', 'U', 'V')
     else: assert False, f"unrecognized colorspace: '{colorspace}'"
-    #for i, col in enumerate(["red", "black", "gold", "brown", "purple", "yellow", "blue", "gray", "green", "orange"]):
-    for col in color_code.keys():
+    keys = list(obs.keys())
+    if keepnone: keys.append("none")
+    for col in keys:
         if col in obs.keys(): cols = obs[col]
         else: continue
         if t is not None: cols = cols.copy() @ t
         if space == 'hls': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2HLS)[0]
         if space == 'ycrcb': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YCrCb)[0]
         if space == 'yuv': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
-        ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col, s=10)
-        #ax.scatter(obs[, color=col, s=10)
+        ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col if col!='none' else 'pink', s=10)
 
     #plt.show()
 
@@ -242,3 +231,66 @@ def labelaxes(ax, *args):
     ax.set_ylabel(args[1])
     if len(args) == 3: ax.set_zlabel(args[2])
 
+def grade_metric(data, metric, t=None):
+    allscores = []
+    colorscores = {k:[] for k in data.keys()}
+    for clabel, cvalues in data.items():
+        for cval in cvalues:
+            out = metric(cval, data, t=t)
+            if isinstance(out, tuple): label, *_ = out
+            else: label = out
+            allscores.append(label == clabel)
+            colorscores[clabel].append(label == clabel)
+    avgallscores = np.mean(allscores)
+    avgcolorscores = {k: round(np.mean(v), 3) for k, v in colorscores.items()}
+    coloravg = np.mean(list(avgcolorscores.values()))
+    return avgallscores, coloravg, avgcolorscores
+
+def grade_identification(identify, inspect=False):
+    tdir, labels = get_test_dir(), load_test_labels()
+    imnames = [e for e in os.listdir(tdir) if e.endswith(("png", "jpg", "jpeg"))]
+    score = []
+    for i in (t:=trange(len(imnames), ncols=100)):
+        imname = imnames[i]
+        im = load_test_im(imname)
+        label = labels[os.path.join(tdir, imname)]
+        try:
+            info, *extras = identify(im)
+        except Exception as e:
+            print(f"{bold+red}\nfailed to identify: {imname} with exceptione {e}{endc}")
+            continue
+
+        match = label['value'] == info['value']
+        if inspect and not match:
+            print_data(info)
+            print(f"{bold+purple}true value: {label['value']}\n")
+            showextras(im, extras)
+        score.append(match)
+
+        t.set_description(f"{blue}score: {np.mean(score):.4f}")
+    return np.mean(score)
+
+def compute_lookup_array(data, t):
+    look = np.zeros((255, 255, 255), dtype=np.int8)
+    data = {k:v@t for k, v in data.items()}
+    for r in trange(255):
+        for g in range(255):
+            for b in range(255):
+                val = np.array([r, g, b])
+                labelidx, mindist = 0, 1e9
+                for i, cvalues in enumerate(data.values()):
+                    d = np.mean(np.linalg.norm(val@t - cvalues, axis=1, ord=2))
+                    if d < mindist:
+                        labelidx = i
+                        mindist = d
+                look[r,g,b] = labelidx
+    return look
+
+def print_data(data):
+    print(f"{yellow}name: {data['name']}")
+    print(f"{orange}ends: {data['ends']}")
+    print(f"{pink}bands: {data['bands']}")
+    print(f"{green}colors: {data['colors']}")
+    print(f"{blue}labels: {data['labels']}{endc}")
+    print(f"{lime}reversed: {data['reversed']}{endc}")
+    print(f"{cyan}value: {data['value']}{endc}")
