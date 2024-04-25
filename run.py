@@ -77,7 +77,7 @@ if __name__ == "__main__":
     while 1:
         im = pc2.capture_array()
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-        imshow('im', im, s=0.3)
+        imshow('im', im, s=0.2)
         
         wait = cv2.waitKey(1) & 0xFF
         if wait == ord('e'):
@@ -100,7 +100,7 @@ if __name__ == "__main__":
             else: print("data was invalid")
 
         if state == 'pending':
-            imshow('processed', mark_bands(extras[0], extras[-2]), s=2.0)
+            imshow('processed', mark_bands(extras[0], extras[-2]), s=1.0)
             if wait == ord('d'):
                 bins.drop(info['value'])
                 print(f"{bold+lime}{info['value']}ohm resistor stored in bin {bins.binvalues.index(info['value'])}{endc}\n\n")
