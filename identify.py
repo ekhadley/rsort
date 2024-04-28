@@ -32,12 +32,10 @@ def band_colors(strp: np.ndarray, numColorClusters=3, peakHeight=2, peakDist=65,
     basecol = centers[np.argmax(counts)]
 
     base = strp - basecol
-    #imshow('base', cv2.cvtColor(np.abs(base), cv2.COLOR_RGB2GRAY)*.02, s=2.0, wait=True)
     avgs = np.mean(base, axis=0)
     ints = np.mean(np.sqrt(np.sum(np.square(base), axis=2)), axis=0)
-    ints = np.convolve(ints, np.ones(peakWidth), mode='valid')/(peakWidth)
+    #ints = np.convolve(ints, np.ones(peakWidth), mode='valid')/(peakWidth)
     
-
     bandpos, info = scipy.signal.find_peaks(ints,
                                     height=peakHeight,
                                     threshold=None,
@@ -76,10 +74,12 @@ def endpoints(im: np.ndarray, lightThresh=40, lowerMass=5000, upperMass=120000):
 
     #imm = cv2.drawContours(cv2.cvtColor(rmask*255, cv2.COLOR_GRAY2RGB), contours, -1, (250,0,250), 5)
     #imm = cv2.drawContours(imm, [hull], -1, (0,250,250), 5)
-    #imm = cv2.ellipse(cv2.cvtColor(rmask*255, cv2.COLOR_GRAY2RGB), ellipse, (0, 255, 0), 10)
-    #imm = cv2.circle(imm, tuple(end1), 50, (0,0,255), 10)
-    #imm = cv2.circle(imm, tuple(end2), 50, (0,0,255), 10)
-    #imshow('ellipse', imm, s=0.25, wait=True)
+    #zzz = cv2.ellipse(cv2.cvtColor(rmask*255, cv2.COLOR_GRAY2RGB), ellipse, (0, 255, 0), 10)
+    #zzz = cv2.ellipse(zzz, ellipse, (0, 255, 0), 10)
+    #zzz = cv2.circle(zzz, tuple(end1), 50, (0,0,255), 10)
+    #zzz = cv2.circle(zzz, tuple(end2), 50, (0,0,255), 10)
+    #imshow('ellipseeee', imm, s=0.25)
+    #imshow('ellipse', zzz, s=0.25, wait=True)
     return np.array([end1, end2])
 
 def identify(im, log=False):
@@ -141,17 +141,17 @@ def lookup_label(*args, **kwargs):
 best = np.load('transform.npy')
 lookup = np.load("lookup.npy")
 if __name__ == "__main__":
-    #im = load_test_im("5.png")
+    #im = load_test_im("11.png")
     #info, *extras = identify(im)
     #print_data(info)
     #showextras(im, extras)
 
-    score = grade_identification(identify, inspect=False)
-    print(f"{bold+purple}{score=:.4f}{endc}")
+    #score = grade_identification(identify, inspect=False)
+    #print(f"{bold+purple}{score=:.4f}{endc}")
 
     #survey_test_dir()
 
-    #labels = load_test_labels()
+    labels = load_test_labels()
     #visualize_color_clusters(labels, colorspace='rgb', t=None)
-    #visualize_color_clusters(labels, colorspace='rgb', t=best)
-    #plt.show()
+    visualize_color_clusters(labels, colorspace='rgb', t=best)
+    plt.show()

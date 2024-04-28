@@ -54,6 +54,7 @@ def showextras(im, extras):
     ax.plot(bandpos, intensity[bandpos], "o", ms=10, color="orange")
     imshow('marked', mark_ends(im, ends), s=0.25)
     imshow('processed', mark_bands(cropped, bandpos), s=2.0)
+    imshow('cropped', cropped, s=2.0)
     imshow('bin', strp)
     imshow('vis', visualize_bands(bandcolors), s=2.0)
     plt.show()
