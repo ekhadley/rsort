@@ -152,6 +152,6 @@ if __name__ == "__main__":
     #survey_test_dir()
 
     labels = load_test_labels()
-    #visualize_color_clusters(labels, colorspace='rgb', t=None)
-    visualize_color_clusters(labels, colorspace='rgb', t=best)
+    visualize_color_clusters(labels, colorspace='rgb', t=None)
+    #visualize_color_clusters(labels, colorspace='rgb', t=best)
     plt.show()
