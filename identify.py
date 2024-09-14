@@ -61,6 +61,9 @@ def endpoints(im: np.ndarray, lightThresh=40, lowerMass=5000, upperMass=120000):
         if (mass > lowerMass) and (mass < upperMass):
             rmask += (labels==i).astype(np.uint8)
 
+    imshow('rmask', rmask*255)
+    cv2.waitKey(0)
+
     contours, heirarchy = cv2.findContours(rmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contour = np.concatenate(contours).squeeze()
 
@@ -141,17 +144,15 @@ def lookup_label(*args, **kwargs):
 best = np.load('transform.npy')
 lookup = np.load("lookup.npy")
 if __name__ == "__main__":
-    #im = load_test_im("11.png")
-    #info, *extras = identify(im)
-    #print_data(info)
-    #showextras(im, extras)
+    im = load_test_im("1000.png")
+    imshow('im', im, 0.25)
+    info, *extras = identify(im)
+    print_data(info)
+    showextras(im, extras)
 
     #score = grade_identification(identify, inspect=False)
     #print(f"{bold+purple}{score=:.4f}{endc}")
 
     #survey_test_dir()
 
-    labels = load_test_labels()
-    visualize_color_clusters(labels, colorspace='rgb', t=None)
-    #visualize_color_clusters(labels, colorspace='rgb', t=best)
-    plt.show()
+    #labels = load_test_labels()

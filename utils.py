@@ -106,13 +106,14 @@ def mark_bands(strp, bandpos):
 
 def get_test_dir(tdname = "ims2"):
     system = platform.system()
-    if system == "Windows": return f"D:\\wgmn\\rsort\\{tdname}"
+    if system == "Windows": return f"C:\\Users\\ekhad\\Desktop\\wgmn\\rsort\\{tdname}"
     elif system == "Linux": return f"/home/ek/Desktop/wgmn/rsort/{tdname}"
-    else: raise FileNotFoundError(f"{bold+red}unknown system: {system}. failed to load image{endc}")
+    else: raise FileNotFoundError(f"{bold+red}unknown system: {system}. failed to find test dir{endc}")
 
 def load_test_im(name):
     tdir = get_test_dir()
     path = os.path.join(tdir, name)
+    print(red, path, endc)
     return cv2.imread(path)
 
 def save_test_labels(labels):
@@ -224,7 +225,7 @@ def visualize_color_clusters(labels, colorspace='hsl', t=None, keepnone=False):
         if space == 'yuv': cols = cv2.cvtColor(np.array([cols]), cv2.COLOR_BGR2YUV)[0]
         ax.scatter(cols[:,0], cols[:,1], cols[:,2], color=col if col!='none' else 'pink', s=10)
 
-    #plt.show()
+    plt.show()
 
 def labelaxes(ax, *args):
     assert 1 < len(args) < 4, f'2 or 3 labels are required. got {len(args)}: {args}'

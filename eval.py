@@ -162,5 +162,12 @@ def lightness_tune():
 
 if __name__ == "__main__":
     #labels = load_test_labels()
-    test_dir_manual_label()
+    #test_dir_manual_label()
     #lightness_tune()
+    
+
+    best = np.load('transform.npy')
+    labels = load_test_labels()
+    #visualize_color_clusters(labels, colorspace='rgb', t=None)
+    visualize_color_clusters(labels, colorspace='rgb', t=best)
+    plt.show()
