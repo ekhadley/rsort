@@ -1,4 +1,2 @@
 __pycache__/
-abc/
-ims/
-ims2/
+*ims*/
