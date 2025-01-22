@@ -2,7 +2,7 @@
 
 A computer vision system that automatically identifies and sorts resistors based on their color bands. The system uses a Raspberry Pi with camera to capture images of resistors, processes them to identify the color bands, calculates the resistance value, and can sort them into bins.
 
-![https://www.youtube.com/watch?v=I8Fsi_Wz-K8](rsort.gif)
+![very hq demo vid](https://www.youtube.com/watch?v=I8Fsi_Wz-K8)
 
 ## Components
 
